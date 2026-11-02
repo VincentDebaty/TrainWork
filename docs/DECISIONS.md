@@ -147,6 +147,7 @@ Arbitré avec ChatGPT (échange 004, `docs/chatgpt/004-progression-couts-sauvega
 - **Vérifié sur la sauvegarde de Vincent :** avec la ligne modifiée, le dépôt reçoit ses 20 pierres, la ville 30, et le niveau 3 devient accessible. Test de régression (ville placée avant le dépôt sur le chemin) ; une mutation qui supprime la réservation le fait échouer.
 - Les anciennes sauvegardes restent compatibles (parcours repris de la ligne, réservations recalculées au prochain arrêt).
 - **Mode Ligne (second retour de Vincent : « on devrait voir la ligne ») :** en entrant dans le mode Ligne, la ligne existante (s'il n'y en a qu'une) est chargée et dessinée le long des rails, avec le numéro d'ordre de chaque arrêt ; un tronçon impraticable apparaît en pointillés rouges. « Lancer » confirme toujours le résultat, y compris « Ligne inchangée ». Les messages temporaires s'affichent sous le HUD.
+- **Plusieurs lignes (troisième retour : « j'en ai 2, comment les sélectionner ? ») :** en mode Ligne, le bouton **« Ligne N › »** passe d'une ligne à l'autre puis à « Nouvelle ». La ligne sélectionnée est affichée en jaune et éditée ; les autres restent visibles en bleu pâle. « Lancer » modifie la ligne sélectionnée (ou lui ajoute un train si son parcours est inchangé et qu'un train est disponible) ; en « Nouvelle », il crée une ligne avec un train. **« Retirer » ne supprime plus que la ligne sélectionnée et ses trains** (auparavant : toutes les lignes).
 
 ## Questions ouvertes
 - Prise en charge des rails sur ponts/eau (niveau 2) : écart à tracer quand le pont sera traité.

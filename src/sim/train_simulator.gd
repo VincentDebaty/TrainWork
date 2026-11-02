@@ -193,6 +193,21 @@ func apply_level() -> void:
 		_equip_wagons(trains[id])
 
 
+## Supprime une ligne et ses trains ; leur cargaison est perdue (registre des pertes).
+func remove_line(line_id: int) -> void:
+	for id: int in trains.keys():
+		var train: Train = trains[id]
+		if train.line_id != line_id:
+			continue
+		if logistics != null:
+			for good: String in train.cargo.goods():
+				logistics.industry.record_loss(good, train.cargo.total(good))
+		dispatcher.release_all(id)
+		trains.erase(id)
+	lines.erase(line_id)
+	_detect_deadlocks()
+
+
 func clear_lines_and_trains() -> void:
 	if logistics != null:
 		for id: int in trains:

@@ -27,6 +27,8 @@ var preview_results: Array[int] = []
 var preview_cost_milli: int = 0
 ## Gares choisies (dans l'ordre) pour la ligne en préparation.
 var pending_stations: Array[int] = []
+## Ligne en cours d'édition en mode Ligne (0 : nouvelle ligne).
+var selected_line: int = 0
 ## Dernière case choisie en mode Rails : point de départ du prochain tracé.
 var head: Vector2i = Vector2i(-1, -1)
 var has_head: bool = false
@@ -61,11 +63,10 @@ func set_mode(new_mode: int) -> void:
 	mode = new_mode
 	if mode != Mode.LINE:
 		_clear_pending()
-	elif pending_stations.is_empty() and _trains != null and _trains.lines.size() == 1:
-		# Une seule ligne : on la charge pour la voir et la modifier.
-		pending_stations = _trains.lines.values()[0].station_ids.duplicate()
-		preview_changed.emit()
-		message.emit("Ligne actuelle affichée : touchez une gare pour l'ajouter à la fin, la dernière pour la retirer, puis Lancer.")
+		selected_line = 0
+	elif _trains != null:
+		# On ouvre la première ligne existante (ou une nouvelle ligne s'il n'y en a pas).
+		_select_line(_line_ids()[0] if not _line_ids().is_empty() else 0)
 	_set_head(false, Vector2i(-1, -1))
 	_cancel_drag()
 	_camera.single_finger_pan = (mode == Mode.NAVIGATE)
@@ -234,42 +235,96 @@ func clear_pending() -> void:
 	_clear_pending()
 
 
-## Crée la ligne choisie et lui affecte un train. Si une ligne identique existe déjà,
-## le nouveau train la rejoint (deux trains sur la même ligne).
+## Passe à la ligne suivante, puis à « Nouvelle », puis revient à la première.
+func select_next_line() -> void:
+	if _trains == null:
+		return
+	var choices: Array[int] = _line_ids()
+	choices.append(0)
+	var index: int = choices.find(selected_line)
+	_select_line(choices[(index + 1) % choices.size()])
+
+
+func selected_line_label() -> String:
+	return "Ligne %d ›" % selected_line if selected_line != 0 else "Nouvelle ›"
+
+
+## Lignes non sélectionnées, à afficher en retrait (listes de gares).
+func other_lines() -> Array:
+	var result: Array = []
+	if _trains != null:
+		for id: int in _line_ids():
+			if id != selected_line:
+				result.append(_trains.lines[id].station_ids)
+	return result
+
+
+func _line_ids() -> Array[int]:
+	var ids: Array[int] = []
+	for id: int in _trains.lines:
+		ids.append(id)
+	ids.sort()
+	return ids
+
+
+func _select_line(line_id: int) -> void:
+	selected_line = line_id if _trains.lines.has(line_id) else 0
+	if selected_line != 0:
+		pending_stations = _trains.lines[selected_line].station_ids.duplicate()
+	else:
+		pending_stations = []
+	preview_changed.emit()
+	if selected_line != 0:
+		message.emit("Ligne %d : touchez une gare pour l'ajouter, la dernière pour la retirer, puis Lancer." % selected_line)
+	else:
+		message.emit("Nouvelle ligne : touchez les gares dans l'ordre, puis Lancer.")
+
+
+## « Lancer » : modifie la ligne sélectionnée (appliqué au prochain arrêt de ses trains),
+## lui ajoute un train si son parcours est inchangé, ou crée une nouvelle ligne avec un train.
 func launch_line() -> void:
 	if _trains == null:
 		return
-	var existing: int = _find_line(pending_stations)
-	var line_id: int = existing
-	if existing != 0 and _trains.trains.size() >= _trains.max_trains():
-		message.emit("Ligne inchangée : elle dessert déjà ces gares, dans cet ordre.")
-		return
-	# Plus de train disponible et une seule ligne : on la modifie (appliqué au prochain arrêt).
-	if existing == 0 and _trains.trains.size() >= _trains.max_trains() and _trains.lines.size() == 1:
-		var updated: int = _trains.update_line(_trains.lines.keys()[0], pending_stations)
+	if selected_line != 0 and _trains.lines.has(selected_line):
+		if pending_stations == _trains.lines[selected_line].station_ids:
+			_add_train_to(selected_line)
+			return
+		var updated: int = _trains.update_line(selected_line, pending_stations)
 		if updated == TrainSimulator.LineResult.OK:
-			message.emit("Ligne modifiée : le train suivra le nouveau parcours après son prochain arrêt.")
-			_clear_pending()
+			message.emit("Ligne %d modifiée : ses trains suivront le nouveau parcours après leur prochain arrêt." % selected_line)
 		else:
 			message.emit(_trains.line_error_message(updated))
 		return
-	if existing == 0:
-		var created: int = _trains.create_line(pending_stations)
-		if created != TrainSimulator.LineResult.OK:
-			message.emit(_trains.line_error_message(created))
-			return
-		line_id = _trains.last_created_line_id
+	var existing: int = _find_line(pending_stations)
+	if existing != 0:
+		selected_line = existing
+		_add_train_to(existing)
+		return
+	var created: int = _trains.create_line(pending_stations)
+	if created != TrainSimulator.LineResult.OK:
+		message.emit(_trains.line_error_message(created))
+		return
+	var line_id: int = _trains.last_created_line_id
 	var result: int = _trains.add_train(line_id)
 	if result != TrainSimulator.LineResult.OK:
-		if existing == 0:
-			_trains.lines.erase(line_id)
+		_trains.lines.erase(line_id)
 		if result == TrainSimulator.LineResult.TOO_MANY_TRAINS:
-			message.emit("Nombre maximal de trains atteint : retirez une ligne avant d'en créer une autre.")
+			message.emit("Nombre maximal de trains atteint : choisissez une ligne existante avec « Ligne › » pour la modifier, ou retirez-en une.")
 		else:
 			message.emit(TrainSimulator.line_result_text(result))
 		return
-	message.emit("Train affecté à la ligne existante." if existing != 0 else "Ligne créée, train en route.")
-	_clear_pending()
+	selected_line = line_id
+	message.emit("Ligne %d créée, train en route." % line_id)
+
+
+func _add_train_to(line_id: int) -> void:
+	var result: int = _trains.add_train(line_id)
+	if result == TrainSimulator.LineResult.OK:
+		message.emit("Train ajouté à la ligne %d." % line_id)
+	elif result == TrainSimulator.LineResult.TOO_MANY_TRAINS:
+		message.emit("Ligne %d inchangée : elle dessert déjà ces gares, dans cet ordre (nombre maximal de trains atteint)." % line_id)
+	else:
+		message.emit(TrainSimulator.line_result_text(result))
 
 
 func _find_line(station_ids: Array[int]) -> int:
@@ -279,10 +334,17 @@ func _find_line(station_ids: Array[int]) -> int:
 	return 0
 
 
-func remove_all_lines() -> void:
-	if _trains != null:
-		_trains.clear_lines_and_trains()
-		message.emit("Lignes et trains retirés.")
+## « Retirer » : supprime la ligne sélectionnée et ses trains (les autres lignes restent).
+func remove_selected_line() -> void:
+	if _trains == null:
+		return
+	if selected_line == 0 or not _trains.lines.has(selected_line):
+		message.emit("Choisissez d'abord une ligne avec « Ligne › ».")
+		return
+	var removed: int = selected_line
+	_trains.remove_line(removed)
+	_select_line(_line_ids()[0] if not _line_ids().is_empty() else 0)
+	message.emit("Ligne %d et ses trains retirés." % removed)
 
 
 func _clear_pending() -> void:

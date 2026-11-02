@@ -17,6 +17,7 @@ const PREVIEW_BAD: Color = Color(0.9, 0.2, 0.2, 0.8)
 const PREVIEW_ERASE: Color = Color(0.95, 0.55, 0.1, 0.8)
 const LINE_COLOR: Color = Color(1.0, 0.85, 0.2, 0.9)
 const BRIDGE_COLOR: Color = Color("8a6a45")
+const OTHER_LINE_COLOR: Color = Color(0.45, 0.65, 1.0, 0.45)
 
 var _network: RailNetwork
 var _projection: RefCounted
@@ -48,6 +49,8 @@ func _draw() -> void:
 	for station: RefCounted in _network.stations():
 		_draw_station(station)
 	_draw_preview()
+	if _build.mode == BuildController.Mode.LINE:
+		_draw_other_lines()
 	_draw_pending_line()
 	_draw_head()
 
@@ -112,6 +115,23 @@ func _draw_pending_line() -> void:
 		draw_circle(badge, 20.0, LINE_COLOR)
 		var label: String = str(i + 1)
 		draw_string(font, badge + Vector2(-7.0 * label.length(), 8), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color.BLACK)
+
+
+## En mode Ligne, les lignes non sélectionnées restent visibles, en retrait.
+func _draw_other_lines() -> void:
+	for stations: Array[int] in _build.other_lines():
+		for i: int in range(1, stations.size()):
+			var a: RefCounted = _network.station_by_id(stations[i - 1])
+			var b: RefCounted = _network.station_by_id(stations[i])
+			if a == null or b == null:
+				continue
+			var path: Array[Vector2i] = _network.graph.find_path(a.cell, b.cell)
+			if path.size() < 2:
+				continue
+			var points: PackedVector2Array = PackedVector2Array()
+			for cell: Vector2i in path:
+				points.append(_projection.cell_center(cell))
+			draw_polyline(points, OTHER_LINE_COLOR, 10.0)
 
 
 func _draw_leg(from_cell: Vector2i, to_cell: Vector2i) -> void:

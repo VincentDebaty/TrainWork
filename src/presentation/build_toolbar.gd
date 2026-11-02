@@ -20,6 +20,7 @@ const ACTIONS: Array = [
 	["reset", "Recommencer", [BuildController.Mode.NAVIGATE]],
 	["undo", "Annuler", [BuildController.Mode.RAIL, BuildController.Mode.ERASE]],
 	["rotate", "Axe", [BuildController.Mode.STATION]],
+	["select_line", "Ligne ›", [BuildController.Mode.LINE]],
 	["launch", "Lancer", [BuildController.Mode.LINE]],
 	["clear", "Vider", [BuildController.Mode.LINE]],
 	["remove_lines", "Retirer", [BuildController.Mode.LINE]],

@@ -185,6 +185,7 @@ func _process(delta: float) -> void:
 		save_now()
 	if _reset_armed_left > 0.0:
 		_reset_armed_left -= delta
+	_toolbar.set_action_text("select_line", _build.selected_line_label())
 	var prog: Progression = _simulation.progression
 	_toolbar.set_action_enabled("upgrade", prog.can_upgrade())
 	_toolbar.set_action_text("upgrade", "Niveau max" if prog.is_max_level() else "Améliorer → N%d" % (prog.level + 1))
@@ -242,8 +243,10 @@ func _on_toolbar_action(action: String) -> void:
 			_build.launch_line()
 		"clear":
 			_build.clear_pending()
+		"select_line":
+			_build.select_next_line()
 		"remove_lines":
-			_build.remove_all_lines()
+			_build.remove_selected_line()
 		"upgrade":
 			var result: int = _simulation.progression.upgrade()
 			if result != Progression.Result.OK:
@@ -295,7 +298,8 @@ func _hud_text() -> String:
 	if _simulation.trains.deadlock_text != "":
 		text += "\n!! " + _simulation.trains.deadlock_text
 	if _build.mode == BuildController.Mode.LINE:
-		text += "\nLigne en préparation : %d gare(s)" % _build.pending_stations.size()
+		var editing: String = "Ligne %d" % _build.selected_line if _build.selected_line != 0 else "Nouvelle ligne"
+		text += "\nÉdition : %s (%d gare(s) sélectionnée(s))" % [editing, _build.pending_stations.size()]
 	text += "\nMode %d | dernier toucher (%d, %d) | viewport %dx%d" % [
 		_build.mode, _last_touch.x, _last_touch.y, get_viewport().get_visible_rect().size.x, get_viewport().get_visible_rect().size.y]
 	if _map.in_bounds(_selected_cell):

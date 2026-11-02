@@ -248,14 +248,17 @@ func test_launch_modifies_the_only_line_when_trains_are_at_maximum() -> void:
 	var c: int = rig.net.station_at(Vector2i(13, 8)).id
 	var messages: Array[String] = []
 	rig.build.message.connect(func(text: String) -> void: messages.append(text))
+	rig.build.set_mode(Mode.LINE)
 	rig.build.pending_stations = [a, b] as Array[int]
-	rig.build.launch_line()
+	rig.build.launch_line()  # nouvelle ligne
+	rig.build.set_mode(Mode.NAVIGATE)
+	rig.build.set_mode(Mode.LINE)  # la ligne existante est sélectionnée
 	rig.build.pending_stations = [a, b, c] as Array[int]
 	rig.build.launch_line()
 	check_eq(trains_sim.lines.size(), 1, "toujours une seule ligne")
 	check_eq(trains_sim.trains.size(), 1, "toujours un seul train")
 	check_eq(trains_sim.lines.values()[0].station_ids, [a, b, c] as Array[int], "la ligne a été modifiée")
-	check(messages.back().contains("Ligne modifiée"), "message explicite : %s" % messages.back())
+	check(messages.back().contains("modifiée"), "message explicite : %s" % messages.back())
 	_free(rig)
 
 
@@ -280,4 +283,46 @@ func test_line_mode_shows_the_existing_line_and_reports_no_change() -> void:
 	check_eq(trains_sim.trains.size(), 1, "pas de train en plus")
 	rig.build.set_mode(Mode.NAVIGATE)
 	check(rig.build.pending_stations.is_empty(), "sélection effacée en quittant le mode Ligne")
+	_free(rig)
+
+
+
+func test_select_among_several_lines_modify_and_remove_one() -> void:
+	var rig: Rig = _rig()
+	var trains_sim: RefCounted = (load("res://src/sim/train_simulator.gd") as GDScript).new(rig.net, (load("res://src/sim/sim_params.gd") as GDScript).new(0.2, 2.0, 3.0, 1.0, 2))
+	rig.build.setup(rig.net, rig.proj, rig.cam, trains_sim)
+	for x: int in [3, 9, 13]:
+		rig.net.place_station(Vector2i(x, 8), 0)
+	for x: int in range(3, 13):
+		rig.net.place_edge(Vector2i(x, 8), Vector2i(x + 1, 8))
+	var a: int = rig.net.station_at(Vector2i(3, 8)).id
+	var b: int = rig.net.station_at(Vector2i(9, 8)).id
+	var c: int = rig.net.station_at(Vector2i(13, 8)).id
+	trains_sim.create_line([a, b] as Array[int])
+	var first: int = trains_sim.last_created_line_id
+	trains_sim.add_train(first)
+	trains_sim.create_line([b, c] as Array[int])
+	var second: int = trains_sim.last_created_line_id
+	trains_sim.add_train(second)
+	rig.build.set_mode(Mode.LINE)
+	check_eq(rig.build.selected_line, first, "la première ligne est sélectionnée")
+	check_eq(rig.build.pending_stations, [a, b] as Array[int], "et affichée")
+	check_eq(rig.build.other_lines().size(), 1, "l'autre ligne reste visible en retrait")
+	rig.build.select_next_line()
+	check_eq(rig.build.selected_line, second, "« Ligne › » passe à la seconde")
+	check_eq(rig.build.pending_stations, [b, c] as Array[int], "son parcours est chargé")
+	rig.build.pending_stations = [b, c, a] as Array[int]
+	rig.build.launch_line()
+	check_eq(trains_sim.lines[second].station_ids, [b, c, a] as Array[int], "la ligne sélectionnée est modifiée")
+	check_eq(trains_sim.lines[first].station_ids, [a, b] as Array[int], "l'autre est intacte")
+	rig.build.select_next_line()
+	check_eq(rig.build.selected_line, 0, "puis « Nouvelle »")
+	check_eq(rig.build.selected_line_label(), "Nouvelle ›", "libellé du bouton")
+	rig.build.select_next_line()
+	check_eq(rig.build.selected_line, first, "et on revient à la première")
+	rig.build.remove_selected_line()
+	check(not trains_sim.lines.has(first), "« Retirer » supprime la ligne sélectionnée")
+	check(trains_sim.lines.has(second), "mais pas l'autre")
+	check_eq(trains_sim.trains.size(), 1, "seul son train est retiré")
+	check_eq(rig.build.selected_line, second, "la ligne restante est sélectionnée")
 	_free(rig)
