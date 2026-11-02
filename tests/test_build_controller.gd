@@ -257,3 +257,27 @@ func test_launch_modifies_the_only_line_when_trains_are_at_maximum() -> void:
 	check_eq(trains_sim.lines.values()[0].station_ids, [a, b, c] as Array[int], "la ligne a été modifiée")
 	check(messages.back().contains("Ligne modifiée"), "message explicite : %s" % messages.back())
 	_free(rig)
+
+
+func test_line_mode_shows_the_existing_line_and_reports_no_change() -> void:
+	var rig: Rig = _rig()
+	var trains_sim: RefCounted = (load("res://src/sim/train_simulator.gd") as GDScript).new(rig.net, (load("res://src/sim/sim_params.gd") as GDScript).new(0.2, 2.0, 3.0, 1.0, 1))
+	rig.build.setup(rig.net, rig.proj, rig.cam, trains_sim)
+	for x: int in [3, 9]:
+		rig.net.place_station(Vector2i(x, 8), 0)
+	for x: int in range(3, 9):
+		rig.net.place_edge(Vector2i(x, 8), Vector2i(x + 1, 8))
+	var a: int = rig.net.station_at(Vector2i(3, 8)).id
+	var b: int = rig.net.station_at(Vector2i(9, 8)).id
+	trains_sim.create_line([a, b] as Array[int])
+	trains_sim.add_train(trains_sim.last_created_line_id)
+	var messages: Array[String] = []
+	rig.build.message.connect(func(text: String) -> void: messages.append(text))
+	rig.build.set_mode(Mode.LINE)
+	check_eq(rig.build.pending_stations, [a, b] as Array[int], "la ligne existante est chargée et affichée")
+	rig.build.launch_line()
+	check(messages.back().contains("inchangée"), "Lancer sans changement le dit : %s" % messages.back())
+	check_eq(trains_sim.trains.size(), 1, "pas de train en plus")
+	rig.build.set_mode(Mode.NAVIGATE)
+	check(rig.build.pending_stations.is_empty(), "sélection effacée en quittant le mode Ligne")
+	_free(rig)

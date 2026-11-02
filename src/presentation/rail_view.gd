@@ -90,9 +90,13 @@ func _draw_head() -> void:
 		draw_arc(_projection.cell_center(_build.head), 26.0, 0.0, TAU, 32, LINE_COLOR, 6.0)
 
 
+## Ligne en préparation (mode Ligne) : chaque tronçon suit les rails ; un tronçon
+## impraticable est tracé en pointillés rouges. Numéros d'ordre au-dessus des gares
+## (une gare desservie plusieurs fois porte plusieurs numéros).
 func _draw_pending_line() -> void:
 	var ids: Array[int] = _build.pending_stations
 	var font: Font = ThemeDB.fallback_font
+	var badges: Dictionary = {}  # id de gare -> nombre de numéros déjà dessinés
 	for i: int in ids.size():
 		var station: RefCounted = _network.station_by_id(ids[i])
 		if station == null:
@@ -101,9 +105,24 @@ func _draw_pending_line() -> void:
 		if i > 0:
 			var previous: RefCounted = _network.station_by_id(ids[i - 1])
 			if previous != null:
-				draw_dashed_line(_projection.cell_center(previous.cell), center, LINE_COLOR, 5.0, 14.0)
-		draw_circle(center + Vector2(0, -34), 20.0, LINE_COLOR)
-		draw_string(font, center + Vector2(-8, -26), str(i + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color.BLACK)
+				_draw_leg(previous.cell, station.cell)
+		var slot: int = badges.get(ids[i], 0)
+		badges[ids[i]] = slot + 1
+		var badge: Vector2 = center + Vector2(slot * 44.0, -34.0)
+		draw_circle(badge, 20.0, LINE_COLOR)
+		var label: String = str(i + 1)
+		draw_string(font, badge + Vector2(-7.0 * label.length(), 8), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color.BLACK)
+
+
+func _draw_leg(from_cell: Vector2i, to_cell: Vector2i) -> void:
+	var path: Array[Vector2i] = _network.graph.find_path(from_cell, to_cell)
+	if path.size() < 2:
+		draw_dashed_line(_projection.cell_center(from_cell), _projection.cell_center(to_cell), PREVIEW_BAD, 6.0, 14.0)
+		return
+	var points: PackedVector2Array = PackedVector2Array()
+	for cell: Vector2i in path:
+		points.append(_projection.cell_center(cell))
+	draw_polyline(points, Color(LINE_COLOR, 0.55), 14.0)
 
 
 func _center(x: int, y: int) -> Vector2:

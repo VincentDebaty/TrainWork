@@ -61,6 +61,11 @@ func set_mode(new_mode: int) -> void:
 	mode = new_mode
 	if mode != Mode.LINE:
 		_clear_pending()
+	elif pending_stations.is_empty() and _trains != null and _trains.lines.size() == 1:
+		# Une seule ligne : on la charge pour la voir et la modifier.
+		pending_stations = _trains.lines.values()[0].station_ids.duplicate()
+		preview_changed.emit()
+		message.emit("Ligne actuelle affichée : touchez une gare pour l'ajouter à la fin, la dernière pour la retirer, puis Lancer.")
 	_set_head(false, Vector2i(-1, -1))
 	_cancel_drag()
 	_camera.single_finger_pan = (mode == Mode.NAVIGATE)
@@ -236,6 +241,9 @@ func launch_line() -> void:
 		return
 	var existing: int = _find_line(pending_stations)
 	var line_id: int = existing
+	if existing != 0 and _trains.trains.size() >= _trains.max_trains():
+		message.emit("Ligne inchangée : elle dessert déjà ces gares, dans cet ordre.")
+		return
 	# Plus de train disponible et une seule ligne : on la modifie (appliqué au prochain arrêt).
 	if existing == 0 and _trains.trains.size() >= _trains.max_trains() and _trains.lines.size() == 1:
 		var updated: int = _trains.update_line(_trains.lines.keys()[0], pending_stations)

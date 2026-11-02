@@ -146,6 +146,7 @@ Arbitré avec ChatGPT (échange 004, `docs/chatgpt/004-progression-couts-sauvega
 - **Destination précise (exigence ChatGPT 002, priorité du GDD) :** à chaque arrêt, la cargaison à bord est réservée pour des gares du parcours, par priorité (dépôt, puis industries, puis villes) puis dans l'ordre du parcours, dans la limite de leur demande non réservée par les autres trains. Un train ne décharge à une gare que ce qui lui est réservé ; les réservations sont recalculées à chaque arrêt et sauvegardées.
 - **Vérifié sur la sauvegarde de Vincent :** avec la ligne modifiée, le dépôt reçoit ses 20 pierres, la ville 30, et le niveau 3 devient accessible. Test de régression (ville placée avant le dépôt sur le chemin) ; une mutation qui supprime la réservation le fait échouer.
 - Les anciennes sauvegardes restent compatibles (parcours repris de la ligne, réservations recalculées au prochain arrêt).
+- **Mode Ligne (second retour de Vincent : « on devrait voir la ligne ») :** en entrant dans le mode Ligne, la ligne existante (s'il n'y en a qu'une) est chargée et dessinée le long des rails, avec le numéro d'ordre de chaque arrêt ; un tronçon impraticable apparaît en pointillés rouges. « Lancer » confirme toujours le résultat, y compris « Ligne inchangée ». Les messages temporaires s'affichent sous le HUD.
 
 ## Questions ouvertes
 - Prise en charge des rails sur ponts/eau (niveau 2) : écart à tracer quand le pont sera traité.

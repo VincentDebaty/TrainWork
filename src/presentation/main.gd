@@ -190,6 +190,8 @@ func _process(delta: float) -> void:
 	_toolbar.set_action_text("upgrade", "Niveau max" if prog.is_max_level() else "Améliorer → N%d" % (prog.level + 1))
 	if _cfg.show_debug_hud:
 		_hud_label.text = _hud_text()
+		# Le message temporaire s'affiche sous le HUD, quelle que soit sa hauteur.
+		_message_label.offset_top = _hud_label.offset_top + _hud_label.get_minimum_size().y + 8.0
 	if _message_ttl > 0.0:
 		_message_ttl -= delta
 		if _message_ttl <= 0.0:
