@@ -21,6 +21,8 @@ var logistics: Logistics
 var progression: Progression
 var construction: Construction
 var trains: TrainSimulator
+## Coûts d'exploitation accumulés (milli-pièces x pas), prélevés minute par minute.
+var _upkeep_accum: int = 0
 
 
 ## `p_content` : contenu de jeu ; sans contenu, simulation sans marchandises.
@@ -67,7 +69,7 @@ func alpha() -> float:
 
 ## Empreinte de l'état logique.
 func state_checksum() -> int:
-	return (tick * 2654435761) ^ trains.state_checksum() ^ industry.checksum() ^ economy.checksum() ^ progression.checksum()
+	return (tick * 2654435761) ^ trains.state_checksum() ^ industry.checksum() ^ economy.checksum() ^ progression.checksum() ^ (_upkeep_accum * 977)
 
 
 ## Unités d'un produit présentes partout (bâtiments, entrepôts, trains).
@@ -108,12 +110,33 @@ func _step() -> void:
 	tick += 1
 	industry.step()
 	trains.step(tick)
+	_charge_upkeep()
+
+
+## Coût d'exploitation courant, en milli-pièces par minute de jeu (avis ChatGPT 005).
+func upkeep_rate_milli_per_min() -> int:
+	var rate: int = trains.network.graph.edge_count() * content.operating_cost("rail_milli_per_segment_per_min")
+	for id: int in trains.trains:
+		var waiting: bool = trains.trains[id].state >= 2  # WAITING_ROUTE, WAITING_CLEARANCE : immobilisé
+		rate += content.operating_cost("train_idle_milli_per_min" if waiting else "train_active_milli_per_min")
+	return rate
+
+
+## Accumule le coût à chaque pas (entiers exacts) et le prélève par minute de jeu.
+@warning_ignore("integer_division")
+func _charge_upkeep() -> void:
+	var ticks_per_min: int = roundi(60.0 / clock.step_sec)
+	_upkeep_accum += upkeep_rate_milli_per_min()
+	if _upkeep_accum >= ticks_per_min * 1000:
+		var due: int = _upkeep_accum / ticks_per_min
+		_upkeep_accum -= due * ticks_per_min
+		economy.charge(due)
 
 
 # --- Sauvegarde ---------------------------------------------------------------
 
 func to_dict() -> Dictionary:
-	return {"tick": tick, "clock_accum": clock.accumulator_usec(), "economy": economy.to_dict(),
+	return {"tick": tick, "clock_accum": clock.accumulator_usec(), "upkeep_accum": _upkeep_accum, "economy": economy.to_dict(),
 			"progression": progression.to_dict(), "industry": industry.to_dict(), "trains": trains.to_dict()}
 
 
@@ -121,6 +144,7 @@ func to_dict() -> Dictionary:
 func load_dict(data: Dictionary) -> void:
 	tick = data["tick"]
 	clock.set_accumulator_usec(data["clock_accum"])
+	_upkeep_accum = data.get("upkeep_accum", 0)
 	economy.load_dict(data["economy"])
 	progression.load_dict(data["progression"])
 	industry.load_dict(data["industry"])

@@ -5,6 +5,8 @@ extends RefCounted
 var wallet_milli: int = 0
 var revenue_milli: int = 0
 var deliveries: int = 0
+## Coûts d'exploitation effectivement prélevés (entretien des trains et des voies).
+var upkeep_milli: int = 0
 
 
 func coins() -> float:
@@ -24,6 +26,15 @@ func refund(amount_milli: int) -> void:
 		wallet_milli += amount_milli
 
 
+## Prélève un coût d'exploitation dans la limite du solde (jamais négatif : les trains
+## continuent de rouler même sans pièces, GDD). Renvoie le montant prélevé.
+func charge(amount_milli: int) -> int:
+	var taken: int = clampi(amount_milli, 0, wallet_milli)
+	wallet_milli -= taken
+	upkeep_milli += taken
+	return taken
+
+
 ## Dépense `amount_milli` si le solde le permet. Renvoie false sinon (solde inchangé).
 func spend(amount_milli: int) -> bool:
 	if amount_milli < 0 or amount_milli > wallet_milli:
@@ -33,14 +44,15 @@ func spend(amount_milli: int) -> bool:
 
 
 func checksum() -> int:
-	return (wallet_milli * 1000003) ^ (revenue_milli * 7919) ^ deliveries
+	return (wallet_milli * 1000003) ^ (revenue_milli * 7919) ^ deliveries ^ (upkeep_milli * 31)
 
 
 func to_dict() -> Dictionary:
-	return {"wallet": wallet_milli, "revenue": revenue_milli, "deliveries": deliveries}
+	return {"wallet": wallet_milli, "revenue": revenue_milli, "deliveries": deliveries, "upkeep": upkeep_milli}
 
 
 func load_dict(data: Dictionary) -> void:
 	wallet_milli = data["wallet"]
 	revenue_milli = data["revenue"]
 	deliveries = data["deliveries"]
+	upkeep_milli = data.get("upkeep", 0)

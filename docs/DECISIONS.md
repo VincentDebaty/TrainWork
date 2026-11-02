@@ -156,5 +156,11 @@ Arbitré avec ChatGPT (échange 004, `docs/chatgpt/004-progression-couts-sauvega
 - **Vérifié sur la sauvegarde de Vincent :** en ajoutant la gare de la ville à la fin de sa ligne 4 (Gare 2 → Gare 7 → Gare 8 → Gare 4), 40 aciers arrivent en ville en 15 minutes de jeu.
 - **Limite constatée :** un train charge aussi du minerai quand il s'éloigne de l'aciérie (aller-retour de la ligne), ce qui allonge le trajet. Optimisation des chargements selon le sens de marche : à envisager plus tard (GDD : « arrêts inutiles sautés », itinéraire le plus rapide).
 
+## D-023 — Consommation des villes par produit et coûts d'exploitation (avis ChatGPT 005)
+- **Villes :** chaque produit débloqué est consommé **indépendamment**, à son rythme (`Industry._consume_city`) ; un produit manquant ne bloque plus les autres. Cause corrigée : dans la partie de Vincent, la ville attendait la pierre au N2 et ne consommait plus ni charbon ni bois, d'où 27 minutes sans revenu.
+- **Coûts d'exploitation** (`data/content.json`, section `operations`, valeurs d'essai de ChatGPT) : train en service (en marche ou en gare) 2 pièces/min ; train immobilisé (attente de voie ou d'itinéraire) 0,5 pièce/min ; voies 0,01 pièce par segment et par minute. Calcul en entiers à chaque pas, prélèvement par minute de jeu ; **solde jamais négatif**, les trains continuent de rouler sans pièces (GDD). Coût courant affiché dans le HUD. Le carburant viendra à part (M8).
+- **Mesure avant / après** (`scripts/measure_economy.sh`, scénarios fixes A optimal et B carrière raccordée 20 min après le N2) : revenu pendant les 20 min sans carrière 213 → **1 134 pièces** ; exploitation 50 pièces sur 19 min (A) et 100 sur 39 min (B) ; rythme optimal inchangé (N2 5,8 min, N3 18,7 min).
+- **Constat pour la suite (E1, à décider) :** les coûts d'exploitation restent faibles face aux revenus et le rythme optimal reste bien plus rapide que les cibles (N1→N2 15-25 min, N1→N3 45-70 min en partie réelle). Conformément à l'avis de ChatGPT, prix et coûts du dépôt ne sont pas encore modifiés : à recalibrer à partir de ces mesures et d'une nouvelle partie réelle.
+
 ## Questions ouvertes
 - Prise en charge des rails sur ponts/eau (niveau 2) : écart à tracer quand le pont sera traité.

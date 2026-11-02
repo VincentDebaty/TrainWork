@@ -269,9 +269,9 @@ func _show_message(text: String) -> void:
 
 func _hud_text() -> String:
 	var graph: RefCounted = _network.graph
-	var text: String = "Pas sim. %d (%.1f s)  |  zoom x%.2f  |  %d FPS\nPièces : %.1f   |   Rails : %d segments, %d aiguillage(s), %d gare(s)" % [
+	var text: String = "Pas sim. %d (%.1f s)  |  zoom x%.2f  |  %d FPS\nPièces : %.1f (exploitation : -%.1f/min)   |   Rails : %d segments, %d aiguillage(s), %d gare(s)" % [
 		_simulation.tick, _simulation.sim_time_sec(), _camera.view_zoom(), Engine.get_frames_per_second(),
-		_simulation.economy.coins(), graph.edge_count(), graph.switch_count(), _network.station_count()]
+		_simulation.economy.coins(), _simulation.upkeep_rate_milli_per_min() / 1000.0, graph.edge_count(), graph.switch_count(), _network.station_count()]
 	for id: int in _simulation.trains.trains:
 		var train: Train = _simulation.trains.trains[id]
 		var station: RefCounted = _network.station_by_id(train.route[train.stop_index])

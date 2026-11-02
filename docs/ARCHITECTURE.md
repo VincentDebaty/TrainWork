@@ -47,7 +47,7 @@ Tous les modules du plan M0-M5 existent ; `tests/game_fixture.gd` fournit des pa
 | **M2** (fait) | Train sur segments, arrêts en gare, aller-retour A-B-C-B-A | pas de saut/oscillation au terminus |
 | **M3** (fait, validé) | Production, stocks, chargement/livraison, pièces | bilan matière, revenu une fois par livraison |
 | **M4** (fait, validé) | `Dispatcher` : réservation de sections, 2 trains niveau 3, interblocages | aucune collision, attente sûre |
-| **M5** (fait, à valider) | Save/Load versionné, niveaux 1–3, test mobile | état identique après rechargement |
+| **M5** (fait, validé le 2026-11-02 après une partie complète sur iPhone) | Save/Load versionné, niveaux 1–3, test mobile | état identique après rechargement |
 
 Chaque jalon s'arrête pour validation humaine avant le suivant.
 

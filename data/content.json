@@ -255,5 +255,11 @@
 			]
 		}
 	},
-	"max_level": 3
+	"max_level": 3,
+	"operations": {
+		"_comment": "Coûts d'exploitation d'essai (avis ChatGPT 005), en milli-pièces par minute de jeu. Le carburant viendra à part (M8).",
+		"train_active_milli_per_min": 2000,
+		"train_idle_milli_per_min": 500,
+		"rail_milli_per_segment_per_min": 10
+	}
 }

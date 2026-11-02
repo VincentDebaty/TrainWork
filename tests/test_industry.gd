@@ -201,11 +201,12 @@ func test_full_chain_mine_station_train_station_city() -> void:
 			if first_delivery_tick < 0:
 				wallet_before_arrival = w.sim.economy.wallet_milli
 				check_eq(w.sim.economy.wallet_milli, 0, "aucune pièce tant que rien n'est livré")
-		# Les pièces ne bougent que lors d'une livraison.
-		if w.sim.economy.wallet_milli != wallet_prev:
+		# Hors coûts d'exploitation, les pièces ne bougent que lors d'une livraison.
+		var before_upkeep: int = w.sim.economy.wallet_milli + w.sim.economy.upkeep_milli
+		if before_upkeep != wallet_prev:
 			var this_tick: Array = w.deliveries.filter(func(d: Dictionary) -> bool: return d["tick"] == w.sim.tick)
 			check(not this_tick.is_empty(), "variation des pièces au pas %d sans livraison" % w.sim.tick)
-		wallet_prev = w.sim.economy.wallet_milli
+		wallet_prev = before_upkeep
 		if first_delivery_tick < 0 and not w.deliveries.is_empty():
 			first_delivery_tick = w.sim.tick
 	check(cargo_seen, "le train a transporté du charbon")
@@ -218,7 +219,8 @@ func test_full_chain_mine_station_train_station_city() -> void:
 		units += d["qty"]
 		check_eq(d["revenue"], d["qty"] * (3000 + 12 * 150), "prix = base + 12 segments x distance, par unité livrée")
 		check_eq(d["station"], w.net.station_at(Vector2i(18, 3)).id, "livré à la gare de la ville")
-	check_eq(w.sim.economy.wallet_milli, revenue, "pièces = somme des livraisons, une seule fois")
+	check_eq(w.sim.economy.wallet_milli, revenue - w.sim.economy.upkeep_milli, "pièces = livraisons (une seule fois) moins exploitation")
+	check(w.sim.economy.upkeep_milli > 0, "des coûts d'exploitation ont été prélevés")
 	check_eq(units, w.sim.industry.delivered["coal"], "unités livrées = registre")
 	check(city.inputs["coal"] + w.sim.industry.consumed.get("coal", 0) >= units, "la ville a consommé ou stocke ce qu'elle a reçu")
 	check(mine.outputs["coal"] <= 20, "sortie de la mine plafonnée")
@@ -360,3 +362,45 @@ func test_production_is_counted_and_stranded_goods_are_detected() -> void:
 	var city: Building = w.sim.industry.building_at(Vector2i(21, 3))
 	city.inputs["coal"] = 0
 	check_eq(w.sim.industry.missing_inputs(city), ["coal", "wood"] as Array[String], "la ville dit ce qui lui manque")
+
+
+## Partie de Vincent (2026-11-02) : au N2, sans pierre, la ville ne consommait plus rien et
+## plus aucune livraison n'était payée pendant 27 minutes. Désormais chaque produit est
+## consommé indépendamment (avis ChatGPT 005, GDD).
+func test_city_consumes_each_good_independently() -> void:
+	var w: World = _world(false)
+	w.sim.progression.set_level(2)  # la ville demande aussi de la pierre
+	var city: Building = w.sim.industry.building_at(Vector2i(21, 3))
+	city.inputs["coal"] = 10
+	city.inputs["wood"] = 10
+	w.sim.industry.produced["coal"] = w.sim.industry.produced.get("coal", 0) + 10  # matière injectée
+	w.sim.industry.produced["wood"] = w.sim.industry.produced.get("wood", 0) + 10
+	_run(w, 15)
+	check_eq(city.inputs["stone"], 0, "aucune pierre")
+	check_eq(city.inputs["coal"], 8, "le charbon est consommé malgré le manque de pierre")
+	check_eq(city.inputs["wood"], 9, "le bois aussi")
+	check_eq(w.sim.industry.missing_inputs(city), ["stone"] as Array[String], "seule la pierre manque")
+	check_eq(w.sim.industry.input_room(city, "coal"), 22, "la ville peut de nouveau recevoir du charbon")
+	for good: String in ["coal", "wood"]:
+		check_eq(w.sim.matter_balance(good), 0, "bilan %s" % good)
+
+
+
+## Coûts d'exploitation (avis ChatGPT 005) : 2 pièces/min par train en service, 0,5 immobilisé,
+## 0,01 par segment de voie ; prélevés par minute, solde jamais négatif.
+func test_operating_costs_are_charged_per_minute_and_never_below_zero() -> void:
+	var w: World = _world()  # 12 segments, aucun train
+	w.sim.economy.wallet_milli = 50000
+	check_eq(w.sim.upkeep_rate_milli_per_min(), 120, "12 segments : 0,12 pièce/min")
+	_launch(w)
+	check_eq(w.sim.upkeep_rate_milli_per_min(), 2120, "+ 1 train en service : 2,12 pièces/min")
+	var wallet: int = w.sim.economy.wallet_milli
+	var revenue: int = w.sim.economy.revenue_milli
+	_run(w, 300)  # 1 minute de jeu
+	var spent: int = w.sim.economy.upkeep_milli
+	check(spent >= 2000 and spent <= 2200, "environ 2,1 pièces prélevées en 1 minute (%d)" % spent)
+	check_eq(w.sim.economy.wallet_milli, wallet + (w.sim.economy.revenue_milli - revenue) - spent, "solde = départ + revenus - exploitation")
+	w.sim.economy.wallet_milli = 300
+	_run(w, 600)
+	check(w.sim.economy.wallet_milli >= 0, "solde jamais négatif")
+	check_eq(w.sim.trains.trains.values()[0].state != 2, true, "le train continue de rouler sans pièces")

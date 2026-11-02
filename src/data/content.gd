@@ -9,6 +9,7 @@ var buildings: Dictionary = {}
 var wagons: Dictionary = {}
 var logistics: Dictionary = {}
 var construction: Dictionary = {}
+var operations: Dictionary = {}
 var levels: Dictionary = {}
 var progression: Dictionary = {}
 var max_level: int = 1
@@ -25,6 +26,7 @@ func load_from(path: String = DEFAULT_PATH) -> bool:
 	wagons = parsed.get("wagons", {})
 	logistics = parsed.get("logistics", {})
 	construction = parsed.get("construction", {})
+	operations = parsed.get("operations", {})
 	levels = parsed.get("levels", {})
 	progression = parsed.get("progression", {})
 	max_level = parsed.get("max_level", 1)
@@ -59,6 +61,10 @@ func building_size(type_id: String) -> Vector2i:
 
 func logistic(key: String, default_value: int = 0) -> int:
 	return logistics.get(key, default_value)
+
+
+func operating_cost(key: String) -> int:
+	return operations.get(key, 0)
 
 
 func build_cost(key: String, default_value: int = 0) -> int:

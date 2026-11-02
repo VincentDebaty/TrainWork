@@ -202,6 +202,9 @@ func step() -> void:
 
 func _produce(building: Building) -> void:
 	var type: Dictionary = content.buildings[building.type_id]
+	if content.building_role(building.type_id) == "city":
+		_consume_city(building, type)
+		return
 	if building.cycle_running:
 		building.progress += 1
 		if building.progress >= type["cycle_ticks"]:
@@ -230,6 +233,25 @@ func _produce(building: Building) -> void:
 	building.cycle_running = true
 	building.progress = 0
 	building.state = Building.State.PRODUCING
+
+
+## Ville (avis ChatGPT 005, option A, conforme au GDD) : chaque produit débloqué est consommé
+## indépendamment, à son rythme ; un produit manquant ne bloque jamais les autres, donc les
+## livraisons des autres produits continuent d'être acceptées et payées.
+func _consume_city(building: Building, type: Dictionary) -> void:
+	building.cycle_running = false
+	building.progress += 1
+	if building.progress < type["cycle_ticks"]:
+		return
+	building.progress = 0
+	var any: bool = false
+	var needs: Dictionary = active_inputs(building)
+	for good: String in needs:
+		if building.inputs.get(good, 0) >= needs[good]:
+			building.inputs[good] -= needs[good]
+			consumed[good] = consumed.get(good, 0) + needs[good]
+			any = true
+	building.state = Building.State.PRODUCING if any else Building.State.WAITING_INPUT
 
 
 ## Transfert automatique bâtiment -> entrepôt de sa gare (chariots décoratifs).
