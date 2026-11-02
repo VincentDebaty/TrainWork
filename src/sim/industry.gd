@@ -135,6 +135,16 @@ func active_inputs(building: Building) -> Dictionary:
 
 
 ## Capacité d'entrée pour un produit : pour le dépôt, la quantité requise.
+## Intrants qui manquent pour démarrer un cycle (vide si rien ne manque).
+func missing_inputs(building: Building) -> Array[String]:
+	var missing: Array[String] = []
+	var needs: Dictionary = active_inputs(building)
+	for good: String in needs:
+		if building.inputs.get(good, 0) < needs[good]:
+			missing.append(good)
+	return missing
+
+
 func input_cap(building: Building, good: String) -> int:
 	if content.building_role(building.type_id) == "depot":
 		return active_inputs(building).get(good, 0)
@@ -198,6 +208,7 @@ func _produce(building: Building) -> void:
 			for good: String in type["outputs"]:
 				building.outputs[good] += type["outputs"][good]
 				produced[good] = produced.get(good, 0) + type["outputs"][good]
+				building.produced_total[good] = building.produced_total.get(good, 0) + type["outputs"][good]
 			building.cycle_running = false
 			building.progress = 0
 	if building.cycle_running:
@@ -270,6 +281,7 @@ func load_dict(data: Dictionary) -> void:
 		building.cycle_running = entry["cycle_running"]
 		building.progress = entry["progress"]
 		building.state = entry["state"]
+		building.produced_total = entry.get("produced_total", {}).duplicate()
 		buildings[building.id] = building
 	for entry: Array in data["warehouses"]:
 		var stock: GoodsStock = GoodsStock.new(0)

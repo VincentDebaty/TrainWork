@@ -4,12 +4,15 @@ extends Node2D
 ## ne la modifie pas.
 
 const BuildController = preload("res://src/presentation/build_controller.gd")
+const Building = preload("res://src/sim/building.gd")
 
 const BORDER_COLOR: Color = Color("2b2118")
 const LINK_COLOR: Color = Color(1.0, 0.85, 0.2, 0.9)
 const NO_STATION_COLOR: Color = Color(0.9, 0.2, 0.2, 0.95)
 const RADIUS_COLOR: Color = Color(1.0, 0.85, 0.2, 0.18)
 const RADIUS_BORDER: Color = Color(1.0, 0.85, 0.2, 0.6)
+const WARNING_COLOR: Color = Color(1.0, 0.75, 0.3)
+const OK_COLOR: Color = Color(0.75, 1.0, 0.7)
 const FONT_SIZE: int = 22
 
 var _simulation: RefCounted
@@ -54,12 +57,54 @@ func _draw() -> void:
 		draw_polyline(corners + PackedVector2Array([corners[0]]), BORDER_COLOR, 5.0)
 		_label(font, center + Vector2(0, -8), type["name"])
 		_label(font, center + Vector2(0, 20), _stock_text(industry, content, building, type))
+		var status: Array = _status(industry, content, building)
+		if status[0] != "":
+			_label(font, center + Vector2(0, 48), status[0], status[1])
 		_draw_link(industry, building, center)
+	_draw_warehouses(industry, content, font)
+
+
+## État lisible : ce que fait le bâtiment, ce qui lui manque, ce qu'il a produit.
+func _status(industry: RefCounted, content: RefCounted, building: RefCounted) -> Array:
+	var role: String = content.building_role(building.type_id)
+	if role == "depot":
+		return ["", Color.WHITE]
+	var missing: PackedStringArray = []
+	for good: String in industry.missing_inputs(building):
+		missing.append(content.good_name(good).to_lower())
+	var made: int = 0
+	for good: String in building.produced_total:
+		made += building.produced_total[good]
+	var made_text: String = "  ·  produit : %d" % made if not building.outputs.is_empty() else ""
+	if building.state == Building.State.OUTPUT_FULL:
+		return ["sortie pleine" + made_text, WARNING_COLOR]
+	if not missing.is_empty() and not building.cycle_running:
+		return ["manque : " + ", ".join(missing) + made_text, WARNING_COLOR]
+	return [("en production" if not building.outputs.is_empty() else "approvisionnée") + made_text, OK_COLOR]
+
+
+## Contenu de l'entrepôt de chaque gare, en rouge quand aucune ligne ne l'emmène
+## vers un consommateur.
+func _draw_warehouses(industry: RefCounted, content: RefCounted, font: Font) -> void:
+	for station: RefCounted in _network.stations():
+		var stock: RefCounted = industry.warehouses.get(station.id)
+		if stock == null or stock.goods().is_empty():
+			continue
+		var stranded: Array[String] = _simulation.stranded_goods(station.id)
+		var y: float = 40.0
+		for good: String in stock.goods():
+			var text: String = "%s %d/%d" % [content.good_name(good), stock.total(good), stock.capacity(good)]
+			var color: Color = Color.WHITE
+			if good in stranded:
+				text += " : sans destination"
+				color = NO_STATION_COLOR
+			_label(font, _projection.cell_center(station.cell) + Vector2(0, y), text, color)
+			y += 26.0
 
 
 func _draw_link(industry: RefCounted, building: RefCounted, center: Vector2) -> void:
 	if building.station_id == 0:
-		_label(ThemeDB.fallback_font, center + Vector2(0, 48), "sans gare", NO_STATION_COLOR)
+		_label(ThemeDB.fallback_font, center + Vector2(0, 76), "sans gare", NO_STATION_COLOR)
 		return
 	var station: RefCounted = _network.station_by_id(building.station_id)
 	if station != null:

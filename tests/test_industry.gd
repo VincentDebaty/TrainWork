@@ -343,3 +343,20 @@ func test_depot_gets_its_materials_even_if_the_city_comes_first() -> void:
 	check_eq(w.sim.progression.city_delivered.get("stone", 0), 0, "la ville, pourtant sur le chemin, n'a rien pris avant que le dépôt soit servi")
 	for good: String in ["stone"]:
 		check_eq(w.sim.matter_balance(good), 0, "bilan matière %s" % good)
+
+
+## Retour de Vincent (2026-11-02) : « l'aciérie ne produit pas d'acier ». Elle produisait,
+## mais l'acier partait à l'entrepôt de sa gare, qu'aucune ligne ne reliait à une ville.
+func test_production_is_counted_and_stranded_goods_are_detected() -> void:
+	var w: World = _world()
+	var mine: Building = w.sim.industry.building_at(Vector2i(3, 3))
+	var s1: int = w.net.station_at(Vector2i(6, 3)).id
+	_run(w, 200)
+	check(mine.produced_total.get("coal", 0) > 0, "la mine compte sa production (%d)" % mine.produced_total.get("coal", 0))
+	check(w.sim.industry.warehouse(s1).total("coal") > 0, "le charbon attend à l'entrepôt")
+	check_eq(w.sim.stranded_goods(s1), ["coal"] as Array[String], "sans ligne : charbon sans destination")
+	_launch(w)
+	check(w.sim.stranded_goods(s1).is_empty(), "avec une ligne vers la ville : il a une destination")
+	var city: Building = w.sim.industry.building_at(Vector2i(21, 3))
+	city.inputs["coal"] = 0
+	check_eq(w.sim.industry.missing_inputs(city), ["coal", "wood"] as Array[String], "la ville dit ce qui lui manque")

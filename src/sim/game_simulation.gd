@@ -78,6 +78,27 @@ func matter_in_system(good: String) -> int:
 	return sum
 
 
+## Produits en entrepôt à cette gare qu'aucune ligne ne peut emmener vers un consommateur :
+## aucune ligne passant par la gare ne dessert une autre gare dont un bâtiment en accepte.
+func stranded_goods(station_id: int) -> Array[String]:
+	var stranded: Array[String] = []
+	var stock: RefCounted = industry.warehouses.get(station_id)
+	if stock == null:
+		return stranded
+	for good: String in stock.goods():
+		var served: bool = false
+		for line_id: int in trains.lines:
+			var stations: Array[int] = trains.lines[line_id].station_ids
+			if not (station_id in stations):
+				continue
+			for other: int in stations:
+				if other != station_id and not industry.consumers_at(other, good).is_empty():
+					served = true
+		if not served:
+			stranded.append(good)
+	return stranded
+
+
 ## Écart du bilan matière d'un produit : produit - consommé - perdu - présent. Toujours 0.
 func matter_balance(good: String) -> int:
 	return industry.produced.get(good, 0) - industry.consumed.get(good, 0) - industry.lost.get(good, 0) - matter_in_system(good)

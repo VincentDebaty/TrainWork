@@ -295,6 +295,7 @@ func _hud_text() -> String:
 		text += "\nCoût du tracé : %.0f pièce(s)" % (_build.preview_cost_milli / 1000.0)
 	elif _build.mode == BuildController.Mode.STATION:
 		text += "\nGare : %.0f pièces" % (_simulation.construction.station_cost() / 1000.0)
+	text += _stranded_alerts()
 	if _simulation.trains.deadlock_text != "":
 		text += "\n!! " + _simulation.trains.deadlock_text
 	if _build.mode == BuildController.Mode.LINE:
@@ -304,6 +305,16 @@ func _hud_text() -> String:
 		_build.mode, _last_touch.x, _last_touch.y, get_viewport().get_visible_rect().size.x, get_viewport().get_visible_rect().size.y]
 	if _map.in_bounds(_selected_cell):
 		text += "\n" + _cell_info(_selected_cell)
+	return text
+
+
+## Alertes : marchandises bloquées dans une gare faute de ligne vers un consommateur.
+func _stranded_alerts() -> String:
+	var text: String = ""
+	for station: RefCounted in _network.stations():
+		for good: String in _simulation.stranded_goods(station.id):
+			text += "\n!! %s bloqué à %s : aucune ligne ne le mène à un consommateur." % [
+				_simulation.content.good_name(good), station.station_name]
 	return text
 
 
@@ -356,8 +367,11 @@ func _cell_info(cell: Vector2i) -> String:
 	if gare != null:
 		var stock: RefCounted = _simulation.industry.warehouse(gare.id)
 		var text: String = "%s : entrepôt" % gare.station_name
+		var stranded: Array[String] = _simulation.stranded_goods(gare.id)
 		for good: String in content.good_ids():
 			text += " | %s %d/%d" % [content.good_name(good), stock.total(good), stock.capacity(good)]
+			if good in stranded:
+				text += " (sans destination)"
 		var served: PackedStringArray = []
 		for id: int in _simulation.industry.buildings:
 			if _simulation.industry.buildings[id].station_id == gare.id:

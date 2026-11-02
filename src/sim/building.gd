@@ -20,6 +20,7 @@ var cycle_running: bool = false
 var progress: int = 0
 var state: int = State.WAITING_INPUT
 var station_id: int = 0  # gare de rattachement, 0 si aucune
+var produced_total: Dictionary = {}  # produit -> unités fabriquées depuis le début
 
 
 func _init(p_id: int, p_type_id: String, p_cell: Vector2i, p_size: Vector2i) -> void:
@@ -54,4 +55,4 @@ func center_grid() -> Vector2:
 
 func to_dict() -> Dictionary:
 	return {"id": id, "type": type_id, "cell": [cell.x, cell.y], "inputs": inputs.duplicate(), "outputs": outputs.duplicate(),
-			"cycle_running": cycle_running, "progress": progress, "state": state}
+			"cycle_running": cycle_running, "progress": progress, "state": state, "produced_total": produced_total.duplicate()}
