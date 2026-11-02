@@ -1,0 +1,56 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://src/presentation/main.gd" id="1_main"]
+[ext_resource type="Resource" path="res://data/world_config.tres" id="2_cfg"]
+[ext_resource type="Script" path="res://src/presentation/world_view.gd" id="3_view"]
+[ext_resource type="Script" path="res://src/presentation/camera_rig.gd" id="4_cam"]
+[ext_resource type="Script" path="res://src/presentation/rail_view.gd" id="5_rail"]
+[ext_resource type="Script" path="res://src/presentation/build_controller.gd" id="6_build"]
+[ext_resource type="Script" path="res://src/presentation/build_toolbar.gd" id="7_bar"]
+[ext_resource type="Script" path="res://src/presentation/train_view.gd" id="8_train"]
+[ext_resource type="Script" path="res://src/presentation/industry_view.gd" id="9_ind"]
+
+[node name="Main" type="Node"]
+script = ExtResource("1_main")
+config = ExtResource("2_cfg")
+
+[node name="WorldView" type="Node2D" parent="."]
+script = ExtResource("3_view")
+
+[node name="IndustryView" type="Node2D" parent="."]
+script = ExtResource("9_ind")
+
+[node name="RailView" type="Node2D" parent="."]
+script = ExtResource("5_rail")
+
+[node name="TrainView" type="Node2D" parent="."]
+script = ExtResource("8_train")
+
+[node name="Camera" type="Camera2D" parent="."]
+script = ExtResource("4_cam")
+
+[node name="BuildController" type="Node" parent="."]
+script = ExtResource("6_build")
+
+[node name="Hud" type="CanvasLayer" parent="."]
+
+[node name="Info" type="Label" parent="Hud"]
+offset_left = 16.0
+offset_top = 12.0
+offset_right = 900.0
+offset_bottom = 100.0
+mouse_filter = 2
+
+[node name="Message" type="Label" parent="Hud"]
+offset_left = 16.0
+offset_top = 112.0
+offset_right = 1264.0
+offset_bottom = 150.0
+mouse_filter = 2
+
+[node name="BuildToolbar" type="HBoxContainer" parent="Hud"]
+offset_left = 8.0
+offset_top = 632.0
+offset_right = 1272.0
+offset_bottom = 712.0
+script = ExtResource("7_bar")

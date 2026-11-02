@@ -1,0 +1,259 @@
+{
+	"_comment": "Valeurs d'essai du prototype, NON validées (GDD : prix, débits, capacités à calibrer). Prix en milli-pièces par unité.",
+	"goods": {
+		"coal": {
+			"name": "Charbon",
+			"base_price_milli": 3000,
+			"dist_price_milli": 150,
+			"color": "#2b2b2b",
+			"unlock_level": 1
+		},
+		"wood": {
+			"name": "Bois",
+			"base_price_milli": 2000,
+			"dist_price_milli": 100,
+			"color": "#8a5a2b",
+			"unlock_level": 1
+		},
+		"stone": {
+			"name": "Pierre",
+			"base_price_milli": 2500,
+			"dist_price_milli": 120,
+			"color": "#9a9a92",
+			"unlock_level": 2
+		},
+		"iron_ore": {
+			"name": "Minerai de fer",
+			"base_price_milli": 2500,
+			"dist_price_milli": 120,
+			"color": "#8a4a3a",
+			"unlock_level": 3
+		},
+		"steel": {
+			"name": "Acier",
+			"base_price_milli": 6000,
+			"dist_price_milli": 200,
+			"color": "#5a6a7a",
+			"unlock_level": 3
+		}
+	},
+	"buildings": {
+		"coal_mine": {
+			"name": "Mine de charbon",
+			"size": [
+				3,
+				3
+			],
+			"inputs": {},
+			"outputs": {
+				"coal": 2
+			},
+			"cycle_ticks": 15,
+			"input_cap": 0,
+			"output_cap": 20,
+			"color": "#3a3a40",
+			"unlock_level": 1,
+			"role": "industry"
+		},
+		"sawmill": {
+			"name": "Scierie",
+			"size": [
+				3,
+				3
+			],
+			"inputs": {},
+			"outputs": {
+				"wood": 2
+			},
+			"cycle_ticks": 15,
+			"input_cap": 0,
+			"output_cap": 20,
+			"color": "#b07a3a",
+			"unlock_level": 1,
+			"role": "industry"
+		},
+		"city": {
+			"name": "Ville",
+			"size": [
+				4,
+				4
+			],
+			"inputs": {
+				"coal": 2,
+				"wood": 1,
+				"stone": 1,
+				"steel": 1
+			},
+			"outputs": {},
+			"cycle_ticks": 15,
+			"input_cap": 30,
+			"output_cap": 0,
+			"color": "#c9b8a0",
+			"unlock_level": 1,
+			"role": "city"
+		},
+		"quarry": {
+			"name": "Carrière",
+			"size": [
+				3,
+				3
+			],
+			"inputs": {},
+			"outputs": {
+				"stone": 2
+			},
+			"cycle_ticks": 15,
+			"input_cap": 0,
+			"output_cap": 20,
+			"color": "#a8a89a",
+			"unlock_level": 2,
+			"role": "industry"
+		},
+		"iron_mine": {
+			"name": "Mine de fer",
+			"size": [
+				3,
+				3
+			],
+			"inputs": {},
+			"outputs": {
+				"iron_ore": 2
+			},
+			"cycle_ticks": 15,
+			"input_cap": 0,
+			"output_cap": 20,
+			"color": "#6a3a30",
+			"unlock_level": 3,
+			"role": "industry"
+		},
+		"steelworks": {
+			"name": "Aciérie",
+			"size": [
+				3,
+				3
+			],
+			"inputs": {
+				"iron_ore": 2,
+				"coal": 1
+			},
+			"outputs": {
+				"steel": 1
+			},
+			"cycle_ticks": 20,
+			"input_cap": 20,
+			"output_cap": 20,
+			"color": "#4a5560",
+			"unlock_level": 3,
+			"role": "industry"
+		},
+		"depot": {
+			"name": "Dépôt",
+			"size": [
+				3,
+				3
+			],
+			"inputs": {},
+			"outputs": {},
+			"cycle_ticks": 15,
+			"input_cap": 0,
+			"output_cap": 0,
+			"color": "#7a3b2e",
+			"unlock_level": 1,
+			"role": "depot"
+		}
+	},
+	"wagons": {
+		"coal_wagon": {
+			"name": "Wagon charbon",
+			"good": "coal",
+			"capacity": 10
+		},
+		"wood_wagon": {
+			"name": "Wagon bois",
+			"good": "wood",
+			"capacity": 10
+		},
+		"stone_wagon": {
+			"name": "Wagon pierre",
+			"good": "stone",
+			"capacity": 10
+		},
+		"iron_wagon": {
+			"name": "Wagon minerai",
+			"good": "iron_ore",
+			"capacity": 10
+		},
+		"steel_wagon": {
+			"name": "Wagon acier",
+			"good": "steel",
+			"capacity": 10
+		}
+	},
+	"logistics": {
+		"station_radius": 2,
+		"building_transfer_per_tick": 1,
+		"station_warehouse_cap": 40,
+		"load_units_per_tick": 2,
+		"station_platforms": 2,
+		"train_length_milli": 1000,
+		"offline_cap_sec": 600,
+		"autosave_interval_sec": 30
+	},
+	"construction": {
+		"start_coins_milli": 200000,
+		"rail_cost_milli": 1000,
+		"station_cost_milli": 10000,
+		"refund_percent": 50,
+		"bridge_cost_milli": 5000
+	},
+	"levels": {
+		"1": {
+			"max_trains": 1
+		},
+		"2": {
+			"max_trains": 1
+		},
+		"3": {
+			"max_trains": 2
+		}
+	},
+	"progression": {
+		"1": {
+			"coins_milli": 75000,
+			"materials": {
+				"wood": 20,
+				"coal": 20
+			},
+			"objectives": [
+				{
+					"kind": "city_delivered_total",
+					"goods": [
+						"coal",
+						"wood"
+					],
+					"total": 40,
+					"each_min": 10
+				}
+			]
+		},
+		"2": {
+			"coins_milli": 150000,
+			"materials": {
+				"wood": 25,
+				"stone": 20,
+				"coal": 15
+			},
+			"objectives": [
+				{
+					"kind": "city_delivered_good",
+					"good": "stone",
+					"total": 30
+				},
+				{
+					"kind": "operational_line"
+				}
+			]
+		}
+	},
+	"max_level": 3
+}

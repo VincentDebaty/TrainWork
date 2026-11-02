@@ -1,0 +1,155 @@
+{
+	"_comment": "Disposition du prototype (carte 80x80, générateur v2). Dépôt au centre ; ressources dans différentes directions (à l'écran : x croît vers le sud-est, y vers le sud-ouest). Chaque site précise sa direction et sa plage de distance indicatives (pour une future génération procédurale), ses coordonnées fixées pour le prototype et son environnement. Cellule = coin haut de l'emprise.",
+	"map": {
+		"width": 80,
+		"height": 80,
+		"seed": 1865,
+		"generator_version": 2
+	},
+	"start_view": {
+		"site": "depot"
+	},
+	"buildings": [
+		{
+			"type": "depot",
+			"cell": [
+				39,
+				39
+			],
+			"direction": "centre",
+			"distance": [
+				0,
+				0
+			],
+			"clearing": 6
+		},
+		{
+			"type": "coal_mine",
+			"cell": [
+				22,
+				39
+			],
+			"direction": "nord-ouest",
+			"distance": [
+				15,
+				20
+			],
+			"biome": {
+				"type": "hills",
+				"radius": 5
+			}
+		},
+		{
+			"type": "sawmill",
+			"cell": [
+				39,
+				56
+			],
+			"direction": "sud-ouest",
+			"distance": [
+				15,
+				20
+			],
+			"biome": {
+				"type": "forest",
+				"radius": 7
+			}
+		},
+		{
+			"type": "city",
+			"cell": [
+				66,
+				39
+			],
+			"direction": "sud-est",
+			"distance": [
+				25,
+				30
+			]
+		},
+		{
+			"type": "quarry",
+			"cell": [
+				39,
+				10
+			],
+			"direction": "nord-est",
+			"distance": [
+				25,
+				35
+			],
+			"biome": {
+				"type": "rock",
+				"radius": 5
+			}
+		},
+		{
+			"type": "iron_mine",
+			"cell": [
+				62,
+				62
+			],
+			"direction": "sud",
+			"distance": [
+				30,
+				40
+			],
+			"biome": {
+				"type": "hills",
+				"radius": 5
+			}
+		},
+		{
+			"type": "steelworks",
+			"cell": [
+				61,
+				18
+			],
+			"direction": "est",
+			"distance": [
+				25,
+				35
+			]
+		}
+	],
+	"river": {
+		"points": [
+			[
+				0,
+				58
+			],
+			[
+				10,
+				47
+			],
+			[
+				20,
+				35
+			],
+			[
+				30,
+				27
+			],
+			[
+				40,
+				15
+			],
+			[
+				50,
+				7
+			],
+			[
+				58,
+				0
+			]
+		]
+	},
+	"bridge": {
+		"center": [
+			40,
+			16
+		],
+		"radius": 2,
+		"unlock_level": 2
+	}
+}
