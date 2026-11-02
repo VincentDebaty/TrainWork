@@ -139,5 +139,13 @@ Arbitré avec ChatGPT (échange 004, `docs/chatgpt/004-progression-couts-sauvega
 - Hors périmètre, non développés : générateur procédural complet, brouillard de guerre définitif.
 *Disposition validée par Vincent le 2026-11-02 après essai sur iPhone.*
 
+## D-021 — Modifier une ligne et destination précise des marchandises (retour de test iPhone)
+**Constat de Vincent :** après avoir relié la carrière et « refait la ligne », le train ne passait pas par la carrière. **Analyse de sa sauvegarde :** la nouvelle ligne n'avait pas été créée (niveau 2 : 1 train maximum, « Lancer » échouait sur « Nombre maximal de trains atteint ») et aucune ligne ne pouvait être modifiée. **En rejouant sa partie** avec la ligne corrigée, un second défaut est apparu : en revenant de la carrière, le train passait par la ville avant le dépôt ; la ville absorbait toute la pierre et le dépôt n'en recevait jamais, ce qui bloquait le passage au niveau 3.
+- **Modifier une ligne (GDD : « un changement de liste est appliqué après le prochain arrêt en gare ») :** `TrainSimulator.update_line`. Chaque train garde son parcours (`Train.route`) jusqu'à son prochain arrêt, puis adopte la nouvelle liste depuis la gare où il se trouve ; si cette gare n'y figure plus, il rejoint la première gare. Les gares de l'ancien parcours restent protégées tant qu'un train les vise.
+- **« Lancer » en mode Ligne :** même liste qu'une ligne existante = un train de plus ; sinon, si le nombre maximal de trains est atteint et qu'il n'y a qu'une ligne, **la ligne est modifiée** (« Ligne modifiée : le train suivra le nouveau parcours après son prochain arrêt ») ; avec plusieurs lignes, message explicite pour en retirer une. Le HUD affiche le parcours de chaque ligne.
+- **Destination précise (exigence ChatGPT 002, priorité du GDD) :** à chaque arrêt, la cargaison à bord est réservée pour des gares du parcours, par priorité (dépôt, puis industries, puis villes) puis dans l'ordre du parcours, dans la limite de leur demande non réservée par les autres trains. Un train ne décharge à une gare que ce qui lui est réservé ; les réservations sont recalculées à chaque arrêt et sauvegardées.
+- **Vérifié sur la sauvegarde de Vincent :** avec la ligne modifiée, le dépôt reçoit ses 20 pierres, la ville 30, et le niveau 3 devient accessible. Test de régression (ville placée avant le dépôt sur le chemin) ; une mutation qui supprime la réservation le fait échouer.
+- Les anciennes sauvegardes restent compatibles (parcours repris de la ligne, réservations recalculées au prochain arrêt).
+
 ## Questions ouvertes
 - Prise en charge des rails sur ponts/eau (niveau 2) : écart à tracer quand le pont sera traité.

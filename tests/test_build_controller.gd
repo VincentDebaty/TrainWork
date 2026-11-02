@@ -233,3 +233,27 @@ func test_launching_the_same_line_twice_adds_a_second_train() -> void:
 	check_eq(trains_sim.lines.size(), 1, "la ligne identique est réutilisée")
 	check_eq(trains_sim.trains.size(), 2, "deux trains sur la ligne")
 	_free(rig)
+
+
+func test_launch_modifies_the_only_line_when_trains_are_at_maximum() -> void:
+	var rig: Rig = _rig()
+	var trains_sim: RefCounted = (load("res://src/sim/train_simulator.gd") as GDScript).new(rig.net, (load("res://src/sim/sim_params.gd") as GDScript).new(0.2, 2.0, 3.0, 1.0, 1))
+	rig.build.setup(rig.net, rig.proj, rig.cam, trains_sim)
+	for x: int in [3, 9, 13]:
+		rig.net.place_station(Vector2i(x, 8), 0)
+	for x: int in range(3, 13):
+		rig.net.place_edge(Vector2i(x, 8), Vector2i(x + 1, 8))
+	var a: int = rig.net.station_at(Vector2i(3, 8)).id
+	var b: int = rig.net.station_at(Vector2i(9, 8)).id
+	var c: int = rig.net.station_at(Vector2i(13, 8)).id
+	var messages: Array[String] = []
+	rig.build.message.connect(func(text: String) -> void: messages.append(text))
+	rig.build.pending_stations = [a, b] as Array[int]
+	rig.build.launch_line()
+	rig.build.pending_stations = [a, b, c] as Array[int]
+	rig.build.launch_line()
+	check_eq(trains_sim.lines.size(), 1, "toujours une seule ligne")
+	check_eq(trains_sim.trains.size(), 1, "toujours un seul train")
+	check_eq(trains_sim.lines.values()[0].station_ids, [a, b, c] as Array[int], "la ligne a été modifiée")
+	check(messages.back().contains("Ligne modifiée"), "message explicite : %s" % messages.back())
+	_free(rig)

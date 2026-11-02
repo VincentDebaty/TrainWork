@@ -164,3 +164,19 @@ func test_offline_catch_up_is_capped_and_isolated() -> void:
 	check_eq(catch_up.catch_up(w.sim, -50.0)["ticks"], 0, "durée négative ignorée")
 	for good: String in w.content.good_ids():
 		check_eq(w.sim.matter_balance(good), 0, "bilan matière %s après rattrapage" % good)
+
+
+func test_saves_without_train_route_still_load() -> void:
+	var a: RefCounted = _rich_world()
+	var data: Dictionary = SaveGame.new().serialize(a, {}, 1)
+	for entry: Dictionary in data["sim"]["trains"]["trains"]:
+		entry.erase("route")
+		entry.erase("relocate")
+	var copy: RefCounted = _f.new_world()
+	copy.sim.industry.buildings.clear()
+	check_eq(SaveGame.new().restore(copy, SaveGame.from_json(SaveGame.to_json(data))), "", "ancienne sauvegarde acceptée")
+	for id: int in copy.sim.trains.trains:
+		var train: RefCounted = copy.sim.trains.trains[id]
+		check_eq(train.route, copy.sim.trains.lines[train.line_id].station_ids, "parcours repris de la ligne")
+	copy.sim.advance_ticks(500)
+	check(true, "la partie continue")

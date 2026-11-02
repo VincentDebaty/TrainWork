@@ -238,3 +238,54 @@ func test_interpolation_alpha_in_range() -> void:
 	var w: World = _world()
 	w.sim.advance(0.07)
 	check(w.sim.alpha() > 0.3 and w.sim.alpha() < 0.4, "alpha = 0,07 / 0,2")
+
+
+func test_line_change_is_adopted_at_the_next_stop() -> void:
+	var w: World = _world()
+	var s: Array[int] = _straight(w)  # A (2,5), B (12,5), C (20,5)
+	_launch(w, [s[0], s[1]] as Array[int])
+	var train: Train = w.sim.trains.trains.values()[0]
+	_run(w, 25)  # en route vers B
+	check_eq(train.state, Train.State.RUNNING, "en route vers B")
+	check_eq(w.sim.trains.update_line(w.sim.trains.last_created_line_id, [s[0], s[1], s[2]] as Array[int]), LR.OK, "ligne prolongée jusqu'à C")
+	check_eq(train.route, [s[0], s[1]] as Array[int], "le train finit son trajet en cours sur l'ancien parcours")
+	_run(w, 400)
+	var seq: Array[int] = _stations_of(w)
+	check(seq.size() >= 3, "plusieurs arrêts")
+	check_eq(seq[0], s[1], "arrive d'abord en B")
+	check_eq(seq[1], s[2], "puis continue jusqu'à C : nouveau parcours adopté après l'arrêt")
+	check_eq(train.route, [s[0], s[1], s[2]] as Array[int], "parcours mis à jour")
+
+
+func test_line_change_without_current_station_rejoins_the_first_one() -> void:
+	var w: World = _world()
+	var s: Array[int] = _straight(w)
+	_launch(w, [s[0], s[1]] as Array[int])
+	_run(w, 25)  # en route vers B
+	check_eq(w.sim.trains.update_line(w.sim.trains.last_created_line_id, [s[2], s[0]] as Array[int]), LR.OK, "nouvelle ligne C-A, sans B")
+	_run(w, 600)
+	var seq: Array[int] = _stations_of(w)
+	check_eq(seq[0], s[1], "arrive en B (trajet en cours)")
+	check_eq(seq[1], s[2], "rejoint la première gare du nouveau parcours (C)")
+	check_eq(seq[2], s[0], "puis suit C-A")
+
+
+func test_invalid_line_change_is_refused() -> void:
+	var w: World = _world()
+	var s: Array[int] = _straight(w)
+	_launch(w, [s[0], s[1]] as Array[int])
+	w.net.place_station(Vector2i(10, 15), 0)
+	var isolated: int = w.net.station_at(Vector2i(10, 15)).id
+	var line_id: int = w.sim.trains.last_created_line_id
+	check_eq(w.sim.trains.update_line(line_id, [s[0], isolated] as Array[int]), LR.NO_ROUTE, "gare non reliée : refusé")
+	check_eq(w.sim.trains.lines[line_id].station_ids, [s[0], s[1]] as Array[int], "ligne inchangée")
+	check_eq(w.sim.trains.update_line(99, [s[0], s[1]] as Array[int]), LR.UNKNOWN_LINE, "ligne inconnue")
+
+
+func test_station_of_the_old_route_stays_protected_until_adopted() -> void:
+	var w: World = _world()
+	var s: Array[int] = _straight(w)
+	_launch(w, [s[0], s[1]] as Array[int])
+	_run(w, 25)
+	w.sim.trains.update_line(w.sim.trains.last_created_line_id, [s[0], s[2]] as Array[int])
+	check(not w.net.remove_station(Vector2i(12, 5)), "B encore visée par le train : protégée")

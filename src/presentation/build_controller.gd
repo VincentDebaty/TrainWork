@@ -236,6 +236,15 @@ func launch_line() -> void:
 		return
 	var existing: int = _find_line(pending_stations)
 	var line_id: int = existing
+	# Plus de train disponible et une seule ligne : on la modifie (appliqué au prochain arrêt).
+	if existing == 0 and _trains.trains.size() >= _trains.max_trains() and _trains.lines.size() == 1:
+		var updated: int = _trains.update_line(_trains.lines.keys()[0], pending_stations)
+		if updated == TrainSimulator.LineResult.OK:
+			message.emit("Ligne modifiée : le train suivra le nouveau parcours après son prochain arrêt.")
+			_clear_pending()
+		else:
+			message.emit(_trains.line_error_message(updated))
+		return
 	if existing == 0:
 		var created: int = _trains.create_line(pending_stations)
 		if created != TrainSimulator.LineResult.OK:
@@ -246,7 +255,10 @@ func launch_line() -> void:
 	if result != TrainSimulator.LineResult.OK:
 		if existing == 0:
 			_trains.lines.erase(line_id)
-		message.emit(TrainSimulator.line_result_text(result))
+		if result == TrainSimulator.LineResult.TOO_MANY_TRAINS:
+			message.emit("Nombre maximal de trains atteint : retirez une ligne avant d'en créer une autre.")
+		else:
+			message.emit(TrainSimulator.line_result_text(result))
 		return
 	message.emit("Train affecté à la ligne existante." if existing != 0 else "Ligne créée, train en route.")
 	_clear_pending()

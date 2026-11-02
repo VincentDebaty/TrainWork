@@ -19,6 +19,10 @@ var state: int = State.DWELLING
 var stop_index: int = 0
 var target_index: int = 0
 var direction: int = 1  # +1 : vers la fin de la ligne, -1 : vers le début
+## Liste de gares suivie (copie de la ligne, mise à jour au prochain arrêt après un changement).
+var route: Array[int] = []
+## Le parcours a changé et ne contient plus la gare où se trouve le train : il rejoint la première.
+var relocate: bool = false
 var dwell_left: int = 0
 var retry_left: int = 0
 var at_station: bool = true
@@ -40,6 +44,8 @@ var blockers: Array[int] = []
 
 ## Cargaison transportée (lots avec gare d'origine) ; capacités fixées par les wagons.
 var cargo: RefCounted = null
+## Destination précise de la cargaison : id de gare -> {produit -> quantité réservée}.
+var bookings: Dictionary = {}
 
 var pos: Vector2 = Vector2.ZERO
 var prev_pos: Vector2 = Vector2.ZERO
@@ -61,4 +67,14 @@ func to_dict() -> Dictionary:
 			"direction": direction, "dwell_left": dwell_left, "retry_left": retry_left, "at_station": at_station,
 			"cell": [cell.x, cell.y], "heading": heading, "path": path_list, "seg": seg, "progress": progress_milli,
 			"cell_dist": cell_dist.duplicate(), "release_index": release_index,
-			"wait_cell": [wait_cell.x, wait_cell.y], "blockers": blockers.duplicate(), "cargo": cargo.to_dict()}
+			"wait_cell": [wait_cell.x, wait_cell.y], "blockers": blockers.duplicate(), "cargo": cargo.to_dict(),
+			"route": route.duplicate(), "relocate": relocate, "bookings": bookings_list()}
+
+
+## Réservations sous forme de liste (les clés entières ne survivent pas au JSON).
+func bookings_list() -> Array:
+	var list: Array = []
+	for station_id: int in bookings:
+		for good: String in bookings[station_id]:
+			list.append([station_id, good, bookings[station_id][good]])
+	return list

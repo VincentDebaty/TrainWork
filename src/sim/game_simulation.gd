@@ -33,6 +33,7 @@ func _init(params: SimParams, max_steps_per_advance: int, network: RefCounted, p
 	trains = TrainSimulator.new(network, params)
 	trains.content = content
 	trains.logistics = logistics
+	logistics.booked_elsewhere = trains.booked_by_others
 	progression = Progression.new(content, industry, economy)
 	progression.trains = trains
 	industry.progression = progression

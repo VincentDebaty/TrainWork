@@ -269,9 +269,8 @@ func _hud_text() -> String:
 		_simulation.economy.coins(), graph.edge_count(), graph.switch_count(), _network.station_count()]
 	for id: int in _simulation.trains.trains:
 		var train: Train = _simulation.trains.trains[id]
-		var line: RefCounted = _simulation.trains.lines[train.line_id]
-		var station: RefCounted = _network.station_by_id(line.station_ids[train.stop_index])
-		var target: RefCounted = _network.station_by_id(line.station_ids[train.target_index])
+		var station: RefCounted = _network.station_by_id(train.route[train.stop_index])
+		var target: RefCounted = _network.station_by_id(train.route[train.target_index])
 		text += "\nTrain %d : %s" % [train.id, Train.STATE_NAMES[train.state]]
 		if station != null and train.state == Train.State.DWELLING:
 			text += " (%s)" % station.station_name
@@ -280,6 +279,12 @@ func _hud_text() -> String:
 		text += " | " + _cargo_text(train.cargo)
 		if train.state == Train.State.WAITING_CLEARANCE:
 			text += "\n    " + _simulation.trains.wait_text(train.id)
+	for id: int in _simulation.trains.lines:
+		var names: PackedStringArray = []
+		for station_id: int in _simulation.trains.lines[id].station_ids:
+			var station: RefCounted = _network.station_by_id(station_id)
+			names.append(station.station_name if station != null else "?")
+		text += "\nLigne %d : %s" % [id, " > ".join(names)]
 	text += "\n" + _progress_text()
 	if _build.preview_cost_milli > 0:
 		text += "\nCoût du tracé : %.0f pièce(s)" % (_build.preview_cost_milli / 1000.0)

@@ -310,3 +310,36 @@ func test_buildings_block_rails_and_stations() -> void:
 	check_eq(w.net.place_edge(Vector2i(5, 3), Vector2i(5, 4)), RailNetwork.Result.OK, "rail à côté de la mine : permis")
 	check_eq(w.net.place_edge(Vector2i(3, 3), Vector2i(4, 3)), RailNetwork.Result.OCCUPIED, "pas de rail sur la mine")
 	check_eq(w.net.place_edge(Vector2i(21, 1), Vector2i(21, 2)), RailNetwork.Result.OCCUPIED, "pas de rail sur la ville")
+
+
+
+## Reproduit la partie de Vincent (2026-11-02) : en revenant de la carrière, le train passe
+## par la ville avant le dépôt. La pierre doit d'abord aller au dépôt (priorité du GDD).
+func test_depot_gets_its_materials_even_if_the_city_comes_first() -> void:
+	var content: Content = _content()
+	var w: World = World.new()
+	w.content = content
+	w.net = RailNetwork.new(WorldMap.new(40, 40, 1, 1))
+	w.sim = GameSimulation.new(SimParams.new(0.2, 2.0, 3.0, 1.0, 1), 25, w.net, content)
+	w.sim.progression.set_level(2)
+	w.sim.industry.add_building("quarry", Vector2i(3, 5))  # gare Q en (6,3)
+	w.sim.industry.add_building("city", Vector2i(11, 5))  # gare C en (12,3)
+	w.sim.industry.add_building("depot", Vector2i(23, 5))  # gare D en (24,3)
+	for x: int in [6, 12, 24]:
+		w.net.place_station(Vector2i(x, 3), 0)
+	for x: int in range(6, 24):
+		w.net.place_edge(Vector2i(x, 3), Vector2i(x + 1, 3))
+	var q: int = w.net.station_at(Vector2i(6, 3)).id
+	var c: int = w.net.station_at(Vector2i(12, 3)).id
+	var d: int = w.net.station_at(Vector2i(24, 3)).id
+	check_eq(w.sim.trains.create_line([q, c, d] as Array[int]), LR.OK, "ligne carrière, ville, dépôt")
+	check_eq(w.sim.trains.add_train(w.sim.trains.last_created_line_id), LR.OK, "train")
+	var depot: Building = w.sim.progression.depot()
+	var ticks: int = 0
+	while depot.inputs.get("stone", 0) < 20 and ticks < 3000:
+		w.sim._step()
+		ticks += 1
+	check_eq(depot.inputs.get("stone", 0), 20, "le dépôt reçoit ses 20 pierres (%d pas)" % ticks)
+	check_eq(w.sim.progression.city_delivered.get("stone", 0), 0, "la ville, pourtant sur le chemin, n'a rien pris avant que le dépôt soit servi")
+	for good: String in ["stone"]:
+		check_eq(w.sim.matter_balance(good), 0, "bilan matière %s" % good)

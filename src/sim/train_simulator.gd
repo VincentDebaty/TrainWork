@@ -68,6 +68,15 @@ func _init(p_network: RailNetwork, p_params: SimParams) -> void:
 	dispatcher.capacity_of = _cell_capacity
 
 
+## Quantité réservée pour une gare par les trains autres que `except_id`.
+func booked_by_others(station_id: int, good: String, except_id: int) -> int:
+	var total: int = 0
+	for id: int in trains:
+		if id != except_id:
+			total += trains[id].bookings.get(station_id, {}).get(good, 0)
+	return total
+
+
 static func line_result_text(result: int) -> String:
 	return LINE_RESULT_TEXTS.get(result, "?")
 
@@ -88,6 +97,28 @@ func line_error_message(result: int) -> String:
 
 ## Crée une ligne si chaque tronçon entre gares consécutives est praticable.
 func create_line(station_ids: Array[int]) -> int:
+	var result: int = _validate_stations(station_ids)
+	if result != LineResult.OK:
+		return result
+	var line: Line = Line.new(_next_line_id, station_ids)
+	_next_line_id += 1
+	lines[line.id] = line
+	last_created_line_id = line.id
+	return LineResult.OK
+
+
+## Change la liste de gares d'une ligne (GDD : « un changement de liste est appliqué après
+## le prochain arrêt en gare ») : chaque train de la ligne l'adopte à son prochain arrêt.
+func update_line(line_id: int, station_ids: Array[int]) -> int:
+	if not lines.has(line_id):
+		return LineResult.UNKNOWN_LINE
+	var result: int = _validate_stations(station_ids)
+	if result == LineResult.OK:
+		lines[line_id].station_ids = station_ids.duplicate()
+	return result
+
+
+func _validate_stations(station_ids: Array[int]) -> int:
 	if station_ids.size() < 2:
 		return LineResult.TOO_FEW_STATIONS
 	for i: int in station_ids.size():
@@ -105,10 +136,6 @@ func create_line(station_ids: Array[int]) -> int:
 		if network.find_station_path(b, a).is_empty():
 			last_blocked_leg = [b, a] as Array[int]
 			return LineResult.NO_ROUTE
-	var line: Line = Line.new(_next_line_id, station_ids)
-	_next_line_id += 1
-	lines[line.id] = line
-	last_created_line_id = line.id
 	return LineResult.OK
 
 
@@ -126,6 +153,7 @@ func add_train(line_id: int) -> int:
 	if not dispatcher.try_reserve(train.id, [first.cell] as Array[Vector2i])["ok"]:
 		return LineResult.STATION_FULL
 	_next_train_id += 1
+	train.route = line.station_ids.duplicate()
 	train.dwell_left = params.dwell_ticks
 	train.cargo = GoodsStock.new(0)
 	_equip_wagons(train)
@@ -192,6 +220,9 @@ func station_in_use(station_id: int) -> bool:
 	for id: int in lines:
 		if station_id in lines[id].station_ids:
 			return true
+	for id: int in trains:
+		if station_id in trains[id].route:  # parcours pas encore mis à jour
+			return true
 	return false
 
 
@@ -226,13 +257,20 @@ func state_checksum() -> int:
 			h = (h ^ v) * 1099511628211
 		if t.cargo != null:
 			h = (h ^ t.cargo.checksum()) * 1099511628211
+		h = (h ^ str(t.bookings_list()).hash()) * 1099511628211
 	return (h ^ dispatcher.checksum()) * 1099511628211
 
 
 func _depart(train: Train) -> void:
-	var line: Line = lines[train.line_id]
+	if train.relocate:
+		# Nouveau parcours sans la gare où il se trouve : il rejoint la première gare.
+		train.relocate = false
+		train.target_index = 0
+		train.direction = 1
+		_plan(train)
+		return
 	var next: int = train.stop_index + train.direction
-	if next < 0 or next >= line.station_ids.size():
+	if next < 0 or next >= train.route.size():
 		train.direction = -train.direction
 		next = train.stop_index + train.direction
 	train.target_index = next
@@ -243,8 +281,7 @@ func _depart(train: Train) -> void:
 ## Sans voie : le train attend (WAITING_ROUTE). Voie occupée ou quai plein : il attend
 ## (WAITING_CLEARANCE) sans rien retenir d'autre que sa case.
 func _plan(train: Train) -> void:
-	var line: Line = lines[train.line_id]
-	var target: RefCounted = network.station_by_id(line.station_ids[train.target_index])
+	var target: RefCounted = network.station_by_id(train.route[train.target_index])
 	var path: Array[Vector2i] = []
 	if target != null:
 		path = network.graph.find_path(train.cell, target.cell, -1 if train.at_station else train.heading)
@@ -338,19 +375,34 @@ func _arrive(train: Train, tick: int) -> void:
 	train.progress_milli = 0
 	train.dwell_left = params.dwell_ticks
 	train.stop_index = train.target_index
+	var station_id: int = train.route[train.stop_index]
+	_adopt_line_changes(train)
 	_handle_stop(train)
 	if progression != null:
 		progression.record_trip()
-	var line: Line = lines[train.line_id]
-	train_arrived.emit(train.id, line.station_ids[train.stop_index], tick)
+	train_arrived.emit(train.id, station_id, tick)
+
+
+## À l'arrêt, le train adopte la liste de gares de sa ligne si elle a changé : il reprend
+## depuis la gare où il se trouve, ou rejoint la première gare si elle n'y figure plus.
+func _adopt_line_changes(train: Train) -> void:
+	var line: Line = lines.get(train.line_id)
+	if line == null or train.route == line.station_ids:
+		return
+	var here: int = train.route[train.stop_index]
+	train.route = line.station_ids.duplicate()
+	var index: int = train.route.find(here)
+	train.relocate = index < 0
+	train.stop_index = maxi(index, 0)
+	train.target_index = train.stop_index
 
 
 ## Manutention à l'arrêt : l'arrêt dure au moins `dwell_ticks`, plus si le volume l'exige.
 func _handle_stop(train: Train) -> void:
 	if logistics == null:
 		return
-	var line: Line = lines[train.line_id]
-	var handling: int = logistics.handle_stop(train, line.station_ids[train.stop_index], line)
+	var station_id: int = -1 if train.relocate else train.route[train.stop_index]
+	var handling: int = logistics.handle_stop(train, station_id, train.route)
 	train.dwell_left = maxi(params.dwell_ticks, handling)
 
 
@@ -479,6 +531,16 @@ func load_dict(data: Dictionary) -> void:
 			train.blockers.append(b)
 		train.cargo = GoodsStock.new(0)
 		train.cargo.load_dict(entry["cargo"])
+		# Sauvegardes antérieures : pas de parcours propre, celui de la ligne.
+		train.route = []
+		for id: int in entry.get("route", lines[train.line_id].station_ids if lines.has(train.line_id) else []):
+			train.route.append(id)
+		train.relocate = entry.get("relocate", false)
+		train.bookings = {}
+		for booking: Array in entry.get("bookings", []):
+			if not train.bookings.has(booking[0]):
+				train.bookings[booking[0]] = {}
+			train.bookings[booking[0]][booking[1]] = booking[2]
 		trains[train.id] = train
 		_refresh_pos(train)
 		train.prev_pos = train.pos
