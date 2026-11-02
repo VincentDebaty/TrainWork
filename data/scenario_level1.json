@@ -1,10 +1,10 @@
 {
-	"_comment": "Disposition du prototype (carte 80x80, générateur v2). Dépôt au centre ; ressources dans différentes directions (à l'écran : x croît vers le sud-est, y vers le sud-ouest). Chaque site précise sa direction et sa plage de distance indicatives (pour une future génération procédurale), ses coordonnées fixées pour le prototype et son environnement. Cellule = coin haut de l'emprise.",
+	"_comment": "Disposition du prototype (carte 80x80, générateur v2). Dépôt au centre, sites rapprochés d'environ 30 % à la demande de Vincent (D-024) ; ressources dans différentes directions (à l'écran : x croît vers le sud-est, y vers le sud-ouest). Chaque site précise sa direction et sa plage de distance indicatives (pour une future génération procédurale), ses coordonnées fixées pour le prototype et son environnement. Cellule = coin haut de l'emprise.",
 	"map": {
 		"width": 80,
 		"height": 80,
 		"seed": 1865,
-		"generator_version": 2
+		"generator_version": 3
 	},
 	"start_view": {
 		"site": "depot"
@@ -26,13 +26,13 @@
 		{
 			"type": "coal_mine",
 			"cell": [
-				22,
+				27,
 				39
 			],
 			"direction": "nord-ouest",
 			"distance": [
-				15,
-				20
+				10,
+				15
 			],
 			"biome": {
 				"type": "hills",
@@ -43,12 +43,12 @@
 			"type": "sawmill",
 			"cell": [
 				39,
-				56
+				51
 			],
 			"direction": "sud-ouest",
 			"distance": [
-				15,
-				20
+				10,
+				15
 			],
 			"biome": {
 				"type": "forest",
@@ -58,25 +58,25 @@
 		{
 			"type": "city",
 			"cell": [
-				66,
+				58,
 				39
 			],
 			"direction": "sud-est",
 			"distance": [
-				25,
-				30
+				17,
+				22
 			]
 		},
 		{
 			"type": "quarry",
 			"cell": [
-				39,
-				10
+				38,
+				17
 			],
 			"direction": "nord-est",
 			"distance": [
-				25,
-				35
+				20,
+				26
 			],
 			"biome": {
 				"type": "rock",
@@ -86,13 +86,13 @@
 		{
 			"type": "iron_mine",
 			"cell": [
-				62,
-				62
+				55,
+				55
 			],
 			"direction": "sud",
 			"distance": [
-				30,
-				40
+				20,
+				26
 			],
 			"biome": {
 				"type": "hills",
@@ -102,13 +102,13 @@
 		{
 			"type": "steelworks",
 			"cell": [
-				61,
-				18
+				54,
+				24
 			],
 			"direction": "est",
 			"distance": [
-				25,
-				35
+				19,
+				24
 			]
 		}
 	],
@@ -116,30 +116,30 @@
 		"points": [
 			[
 				0,
-				58
+				64
 			],
 			[
-				10,
-				47
+				12,
+				51
 			],
 			[
-				20,
-				35
+				22,
+				41
 			],
 			[
-				30,
-				27
+				32,
+				31
 			],
 			[
-				40,
-				15
+				42,
+				21
 			],
 			[
-				50,
-				7
+				52,
+				12
 			],
 			[
-				58,
+				63,
 				0
 			]
 		]
@@ -147,7 +147,7 @@
 	"bridge": {
 		"center": [
 			40,
-			16
+			23
 		],
 		"radius": 2,
 		"unlock_level": 2

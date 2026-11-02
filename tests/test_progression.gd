@@ -25,21 +25,21 @@ func test_initial_network_fits_budget_with_margin() -> void:
 	check(_f.sample.build_level1(w), "réseau minimal du niveau 1 posé : mine, scierie, ville")
 	var spent: int = 200000 - w.sim.economy.wallet_milli
 	check(spent <= 100000, "le réseau minimal coûte au plus la moitié du budget (%d milli-pièces)" % spent)
-	check(spent >= 70000, "les bâtiments sont dispersés : le réseau n'est pas trivial (%d)" % spent)
+	check(spent >= 60000, "les bâtiments sont dispersés : le réseau n'est pas trivial (%d)" % spent)
 	check(_f.line(w, _f.level1_line(w)), "la ligne du niveau 1 est praticable")
 
 
 func test_locked_buildings_are_inert_but_reserve_their_ground() -> void:
 	var w: RefCounted = _f.new_world()
-	var quarry: Building = w.sim.industry.building_at(Vector2i(40, 11))
+	var quarry: Building = w.sim.industry.building_at(Vector2i(39, 18))
 	check(quarry != null and quarry.type_id == "quarry", "la carrière existe")
 	check(not w.sim.industry.is_active(quarry), "verrouillée au niveau 1")
-	check(w.sim.industry.is_active(w.sim.industry.building_at(Vector2i(23, 40))), "la mine est active")
+	check(w.sim.industry.is_active(w.sim.industry.building_at(Vector2i(28, 40))), "la mine est active")
 	_f.sample.station(w, "quarry")
 	_f.run(w, 600)
 	check_eq(quarry.station_id, 0, "pas de rattachement tant qu'elle est verrouillée")
 	check_eq(w.sim.industry.produced.get("stone", 0), 0, "ne produit pas")
-	check_eq(w.network.place_station(Vector2i(40, 11), 0), RailNetwork.Result.RESERVED, "son emplacement est réservé, sans le dévoiler")
+	check_eq(w.network.place_station(Vector2i(39, 18), 0), RailNetwork.Result.RESERVED, "son emplacement est réservé, sans le dévoiler")
 
 
 func test_depot_wants_exactly_the_next_level_materials() -> void:
@@ -56,7 +56,7 @@ func test_depot_wants_exactly_the_next_level_materials() -> void:
 
 func test_city_demands_only_unlocked_goods() -> void:
 	var w: RefCounted = _f.new_world()
-	var city: Building = w.sim.industry.building_at(Vector2i(67, 40))
+	var city: Building = w.sim.industry.building_at(Vector2i(59, 40))
 	check(w.sim.industry.accepts(city, "coal") and w.sim.industry.accepts(city, "wood"), "charbon et bois")
 	check(not w.sim.industry.accepts(city, "stone") and not w.sim.industry.accepts(city, "steel"), "ni pierre ni acier au niveau 1")
 	w.sim.progression.set_level(2)
@@ -80,7 +80,7 @@ func test_depot_has_priority_and_pays_nothing() -> void:
 	check(depot.inputs.get("coal", 0) > 0, "le dépôt a reçu du charbon")
 	check(depot.inputs.get("coal", 0) <= 20 and depot.inputs.get("wood", 0) <= 20, "plafonné aux besoins du niveau")
 	# Revenu = uniquement les livraisons à la ville.
-	var city: Building = w.sim.industry.building_at(Vector2i(67, 40))
+	var city: Building = w.sim.industry.building_at(Vector2i(59, 40))
 	var city_units: int = w.sim.progression.city_delivered.get("coal", 0) + w.sim.progression.city_delivered.get("wood", 0)
 	check(city_units > 0, "la ville a aussi été livrée")
 	check(w.sim.economy.revenue_milli > 0, "revenus générés")
@@ -131,7 +131,7 @@ func test_upgrade_consumes_coins_and_materials_and_resets_objectives() -> void:
 	for good: String in ["wood", "coal"]:
 		check_eq(w.sim.matter_balance(good), 0, "bilan matière %s après amélioration" % good)
 	check_eq(w.sim.industry.input_cap(depot, "stone"), 20, "le dépôt attend maintenant 20 pierre")
-	check(w.sim.industry.is_active(w.sim.industry.building_at(Vector2i(40, 11))), "la carrière est débloquée")
+	check(w.sim.industry.is_active(w.sim.industry.building_at(Vector2i(39, 18))), "la carrière est débloquée")
 
 
 func test_unlocks_wagons_and_train_capacity() -> void:
@@ -162,45 +162,45 @@ func test_upgrade_refused_without_depot_or_at_max_level() -> void:
 func test_construction_costs_refunds_and_never_negative() -> void:
 	var w: RefCounted = _f.new_world()
 	var c: RefCounted = w.sim.construction
-	var edges: Array[Vector4i] = [Dir.pair(Vector2i(30, 33), Vector2i(31, 33)), Dir.pair(Vector2i(31, 33), Vector2i(32, 33))]
+	var edges: Array[Vector4i] = [Dir.pair(Vector2i(44, 33), Vector2i(45, 33)), Dir.pair(Vector2i(45, 33), Vector2i(46, 33))]
 	check_eq(c.quote_edges(edges), 2000, "2 rails : 2 pièces")
 	w.sim.economy.wallet_milli = 100000
 	var report: Dictionary = c.place_edges(edges)
 	check_eq(report["placed"], 2, "posés")
 	check_eq(w.sim.economy.wallet_milli, 98000, "2 pièces débitées")
-	check(c.remove_edge(Vector2i(31, 33), Vector2i(32, 33)), "retrait")
+	check(c.remove_edge(Vector2i(45, 33), Vector2i(46, 33)), "retrait")
 	check_eq(w.sim.economy.wallet_milli, 98500, "50 % remboursés")
-	check_eq(c.place_station(Vector2i(30, 33), 0), RailNetwork.Result.OK, "gare")
+	check_eq(c.place_station(Vector2i(44, 33), 0), RailNetwork.Result.OK, "gare")
 	check_eq(w.sim.economy.wallet_milli, 88500, "gare : 10 pièces")
-	check(c.remove_station(Vector2i(30, 33)), "retrait de gare")
+	check(c.remove_station(Vector2i(44, 33)), "retrait de gare")
 	check_eq(w.sim.economy.wallet_milli, 93500, "5 pièces remboursées")
 	# Solde insuffisant : refus total, solde intact.
 	w.sim.economy.wallet_milli = 1500
 	var big: Array[Vector4i] = []
-	for x: int in range(32, 38):
+	for x: int in range(46, 52):
 		big.append(Dir.pair(Vector2i(x, 33), Vector2i(x + 1, 33)))
 	var refused: Dictionary = c.place_edges(big)
 	check(refused["insufficient"] and refused["placed"] == 0, "pose trop chère refusée en entier")
 	check_eq(refused["needed"], 6000, "montant nécessaire indiqué")
 	check_eq(w.sim.economy.wallet_milli, 1500, "solde intact")
-	check_eq(c.place_station(Vector2i(34, 33), 0), RailNetwork.Result.INSUFFICIENT_FUNDS, "gare refusée faute de pièces")
+	check_eq(c.place_station(Vector2i(48, 33), 0), RailNetwork.Result.INSUFFICIENT_FUNDS, "gare refusée faute de pièces")
 	check_eq(w.network.station_count(), 0, "aucune gare posée")
 
 
 func test_construction_undo_is_money_neutral() -> void:
 	var w: RefCounted = _f.new_world()
 	var c: RefCounted = w.sim.construction
-	var edges: Array[Vector4i] = [Dir.pair(Vector2i(30, 33), Vector2i(31, 33)), Dir.pair(Vector2i(31, 33), Vector2i(32, 33))]
+	var edges: Array[Vector4i] = [Dir.pair(Vector2i(44, 33), Vector2i(45, 33)), Dir.pair(Vector2i(45, 33), Vector2i(46, 33))]
 	var placed: Array[Vector4i] = c.place_edges(edges)["placed_edges"]
 	check_eq(c.undo_added(placed), 0, "annulation de la pose")
 	check_eq(w.sim.economy.wallet_milli, 200000, "remboursement intégral à l'annulation")
 	c.place_edges(edges)
-	c.remove_edge(Vector2i(30, 33), Vector2i(31, 33))
+	c.remove_edge(Vector2i(44, 33), Vector2i(45, 33))
 	var after_removal: int = w.sim.economy.wallet_milli
-	check(c.undo_removed([Dir.pair(Vector2i(30, 33), Vector2i(31, 33))] as Array[Vector4i]), "annulation du retrait")
+	check(c.undo_removed([Dir.pair(Vector2i(44, 33), Vector2i(45, 33))] as Array[Vector4i]), "annulation du retrait")
 	check_eq(w.sim.economy.wallet_milli, after_removal - 500, "le remboursement est rendu")
 	w.sim.economy.wallet_milli = 0
-	check(not c.undo_removed([Dir.pair(Vector2i(30, 33), Vector2i(31, 33))] as Array[Vector4i]), "annulation impossible sans pièces")
+	check(not c.undo_removed([Dir.pair(Vector2i(44, 33), Vector2i(45, 33))] as Array[Vector4i]), "annulation impossible sans pièces")
 	check(w.sim.economy.wallet_milli >= 0, "solde jamais négatif")
 
 

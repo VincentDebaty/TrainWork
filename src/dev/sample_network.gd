@@ -10,19 +10,19 @@ const RailNetwork = preload("res://src/rail/rail_network.gd")
 
 ## Gare -> [case, axe]. Bâtiments desservis en commentaire.
 const STATIONS: Dictionary = {
-	"mine": [Vector2i(26, 43), 0],  # mine de charbon (22,39), nord-ouest
+	"mine": [Vector2i(28, 43), 0],  # mine de charbon (27,39), nord-ouest
 	"depot": [Vector2i(40, 43), 0],  # dépôt (39,39), centre
-	"city": [Vector2i(64, 43), 0],  # ville (66,39), sud-est
-	"saw": [Vector2i(40, 54), 0],  # scierie (39,56), sud-ouest
-	"quarry": [Vector2i(40, 14), 0],  # carrière (39,10), nord-est, de l'autre côté du pont (niveau 2)
-	"steel": [Vector2i(62, 22), 0],  # aciérie (61,18), est (niveau 3)
-	"iron": [Vector2i(63, 60), 0],  # mine de fer (62,62), sud (niveau 3)
+	"city": [Vector2i(59, 43), 0],  # ville (58,39), sud-est
+	"saw": [Vector2i(40, 49), 0],  # scierie (39,51), sud-ouest
+	"quarry": [Vector2i(39, 21), 0],  # carrière (38,17), nord-est, de l'autre côté du pont (niveau 2)
+	"steel": [Vector2i(55, 28), 0],  # aciérie (54,24), est (niveau 3)
+	"iron": [Vector2i(56, 53), 0],  # mine de fer (55,55), sud (niveau 3)
 }
 ## Raccordements des embranchements (aiguillages sur la voie principale y=43).
 const JUNCTIONS: Dictionary = {
 	"saw": Vector2i(44, 43),
-	"quarry": Vector2i(39, 43),
-	"iron": Vector2i(60, 43),
+	"quarry": Vector2i(38, 43),
+	"iron": Vector2i(54, 43),
 }
 
 

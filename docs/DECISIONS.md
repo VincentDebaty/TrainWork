@@ -162,5 +162,11 @@ Arbitré avec ChatGPT (échange 004, `docs/chatgpt/004-progression-couts-sauvega
 - **Mesure avant / après** (`scripts/measure_economy.sh`, scénarios fixes A optimal et B carrière raccordée 20 min après le N2) : revenu pendant les 20 min sans carrière 213 → **1 134 pièces** ; exploitation 50 pièces sur 19 min (A) et 100 sur 39 min (B) ; rythme optimal inchangé (N2 5,8 min, N3 18,7 min).
 - **Constat pour la suite (E1, à décider) :** les coûts d'exploitation restent faibles face aux revenus et le rythme optimal reste bien plus rapide que les cibles (N1→N2 15-25 min, N1→N3 45-70 min en partie réelle). Conformément à l'avis de ChatGPT, prix et coûts du dépôt ne sont pas encore modifiés : à recalibrer à partir de ces mesures et d'une nouvelle partie réelle.
 
+## D-024 — Sites rapprochés d'environ 30 % (retour de partie de Vincent)
+- **Constat de Vincent :** au début d'une nouvelle partie, les bâtiments étaient « un peu trop éloignés ». Choix : **tout rapprocher**, y compris les sites des niveaux 2 et 3.
+- **Nouvelles positions** (`data/scenario_level1.json`, carte v3 ; dépôt inchangé en (39,39)) : mine de charbon (27,39) à 12 cases ; scierie (39,51) à 12 ; ville (58,39) à 19 ; carrière (38,17) à 22 ; mine de fer (55,55) à 22 ; aciérie (54,24) à 21. Mêmes directions à l'écran. La rivière est déplacée pour n'isoler que la carrière ; site de pont en (40,23).
+- **Carte v3 :** les sauvegardes de la carte v2 sont refusées proprement (carte différente), il faut lancer une nouvelle partie.
+- **Effets mesurés :** réseau minimal du niveau 1 : 78 pièces sur 200 (environ 95 avant). Rythme optimal : N2 4,8 min, N3 15,5 min (5,8 et 18,7 avant). Budget de départ inchangé (200 pièces) : réversible, à revoir avec la recalibration E1.
+
 ## Questions ouvertes
 - Prise en charge des rails sur ponts/eau (niveau 2) : écart à tracer quand le pont sera traité.

@@ -1,5 +1,5 @@
 extends "res://tests/test_case.gd"
-## Carte du prototype (générateur v2, scénario dispersé) : déterminisme, rivière et pont,
+## Carte du prototype (générateur v2, scénario v3 rapproché) : déterminisme, rivière et pont,
 ## environnements des sites, directions et distances depuis le dépôt.
 
 const Fixture = preload("res://tests/game_fixture.gd")
@@ -22,14 +22,14 @@ func test_map_is_80_by_80_and_reproducible() -> void:
 	var a: RefCounted = _f.new_world()
 	var b: RefCounted = _f.new_world()
 	check_eq(a.map.size(), Vector2i(80, 80), "carte 80 x 80")
-	check_eq(a.map.generator_version, 2, "générateur v2")
+	check_eq(a.map.generator_version, 3, "carte v3 (générateur v2, sites rapprochés)")
 	check_eq(a.map.checksum(), b.map.checksum(), "même scénario => même carte")
 	check(a.map.bridge_cells.size() >= 2, "un site de pont (%d cases)" % a.map.bridge_cells.size())
 
 
 ## Garde-fou : si ce nombre change, la carte du prototype a changé.
-func test_pinned_checksum_v2() -> void:
-	check_eq(_f.new_world().map.checksum(), PINNED_V2, "empreinte de la carte v2")
+func test_pinned_checksum_v3() -> void:
+	check_eq(_f.new_world().map.checksum(), PINNED_V3, "empreinte de la carte v3")
 
 
 ## Écran : x vers le sud-est, y vers le sud-ouest. Direction écran = (x - y, x + y).
@@ -37,12 +37,12 @@ func test_sites_are_dispersed_around_the_depot() -> void:
 	var w: RefCounted = _f.new_world()
 	var depot: Vector2 = _site(w, "depot").center_grid()
 	var expected: Dictionary = {
-		"coal_mine": ["nord-ouest", Vector2(-1, -1), 15, 20],
-		"sawmill": ["sud-ouest", Vector2(-1, 1), 15, 20],
-		"city": ["sud-est", Vector2(1, 1), 25, 30],
-		"quarry": ["nord-est", Vector2(1, -1), 25, 35],
-		"iron_mine": ["sud", Vector2(0, 1), 30, 40],
-		"steelworks": ["est", Vector2(1, 0), 25, 35],
+		"coal_mine": ["nord-ouest", Vector2(-1, -1), 10, 15],
+		"sawmill": ["sud-ouest", Vector2(-1, 1), 10, 15],
+		"city": ["sud-est", Vector2(1, 1), 17, 22],
+		"quarry": ["nord-est", Vector2(1, -1), 20, 26],
+		"iron_mine": ["sud", Vector2(0, 1), 20, 26],
+		"steelworks": ["est", Vector2(1, 0), 19, 24],
 	}
 	for type_id: String in expected:
 		var offset: Vector2 = _site(w, type_id).center_grid() - depot
@@ -117,7 +117,7 @@ func test_bridge_segments_cost_more() -> void:
 		if w.map.in_bounds(n) and w.map.get_terrain(n) == Terrain.Type.PLAINS:
 			land = n
 	check_eq(w.sim.construction.edge_cost(land, bridge), 5000, "segment de pont : 5 pièces")
-	check_eq(w.sim.construction.edge_cost(Vector2i(30, 33), Vector2i(31, 33)), 1000, "rail ordinaire : 1 pièce")
+	check_eq(w.sim.construction.edge_cost(Vector2i(44, 33), Vector2i(45, 33)), 1000, "rail ordinaire : 1 pièce")
 
 
 func test_future_sites_are_hidden_but_reserved() -> void:
@@ -135,4 +135,4 @@ func test_minimal_level_one_network_and_line() -> void:
 	check(w.sim.economy.wallet_milli >= 100000, "au moins la moitié du budget reste (%d)" % w.sim.economy.wallet_milli)
 
 
-const PINNED_V2: int = 8146171567246908175
+const PINNED_V3: int = -5143998115628308154
